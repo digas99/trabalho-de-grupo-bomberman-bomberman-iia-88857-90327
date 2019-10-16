@@ -10,6 +10,26 @@ from mapa import Map
 
 
 async def agent_loop(server_address="localhost:8000", agent_name="student"):
+
+    def distance_to(obj1, obj2):
+        return math.sqrt(math.pow((obj2[0] - obj1[0]), 2) + math.pow((obj2[1] - obj1[1]), 2))
+
+    def bomb_enemies(bomberman,walls):
+     
+        for wall in walls:
+
+            distancia=distance_to(bomberman, wall)
+
+            if(distancia<3):
+                key = "B"
+                return "B"
+
+            else:
+                key = "s"
+
+        return key
+
+
     async with websockets.connect(f"ws://{server_address}/player") as websocket:
 
         # Receive information about static game properties
@@ -29,10 +49,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 key="d"
 
-                print(state["bomberman"])
-
-                path = astar(mapa, start, exit)
-                print(path)
+                key = bomb_enemies(state["bomberman"], state["walls"])
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
@@ -41,20 +58,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print("Server has cleanly disconnected us")
                 return
 
-        print(state['bomberman'])
-
-    def distance_to(obj1, obj2):
-        return math.sqrt(math.pow((obj2[0] - obj1[0]), 2) + math.pow((obj2[1] - obj1[1]), 2))
-
-    def bomb_enemies(bomberman,walls):
-        for i in walls:
-                        distancia=distance_to(bomberman, i["pos"])
-                        if(distancia<5):
-                            key = "B"
-
-                        elif(distancia>=5):
-                            key = "s"
-        return key
 
 class Node():
     def __init__(self, parent=None, position=None):
@@ -119,10 +122,10 @@ def astar(mapa,start,end):
 
             node_position = (current_node.position[0]+new_position[0], current_node.position[1]+new_position[1])
 
-            if node_position[0] > (len(maze) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) -1) or node_position[1] < 0:
+            if node_position[0] > (len(mapa) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) -1) or node_position[1] < 0:
                 continue #garante que está dentro do limite
 
-            if maze[node_position[0]][node_position[1]] != 0:
+            if mapa[node_position[0]][node_position[1]] != 0:
                 continue #garante q está numa zona onde pode passar
 
             new_node = Node(current_node, node_position)
