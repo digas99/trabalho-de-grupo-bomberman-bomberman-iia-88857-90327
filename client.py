@@ -7,11 +7,8 @@ import os
 
 from mapa import Map
 
-# Next 2 lines are not needed for AI agent
 import pygame
-
 pygame.init()
-
 
 async def agent_loop(server_address="localhost:8000", agent_name="student"):
     async with websockets.connect(f"ws://{server_address}/player") as websocket:

@@ -11,24 +11,6 @@ from mapa import Map
 
 async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
-    def distance_to(obj1, obj2):
-        return math.sqrt(math.pow((obj2[0] - obj1[0]), 2) + math.pow((obj2[1] - obj1[1]), 2))
-
-    def bomb_enemies(bomberman,walls):
-     
-        for wall in walls:
-
-            distancia=distance_to(bomberman, wall)
-
-            if(distancia<3):
-                key = "B"
-                return "B"
-
-            else:
-                key = "s"
-
-        return key
-
 
     async with websockets.connect(f"ws://{server_address}/player") as websocket:
 
@@ -39,21 +21,31 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
         # You can create your own map representation or use the game representation:
         mapa = Map(size=game_properties["size"], mapa=game_properties["map"])
+        
+        
 
         while True:
             try:
+                
                 state = json.loads(
                     await websocket.recv()
                 )  # receive game state, this must be called timely or your game will get out of sync with the server
 
+                key = "s"
+                
+                walls = state["walls"] #array de walls
 
-                key="d"
+                bomberman_pos = state["bomberman"] ##guarda a posicao do bomberman
 
-                key = bomb_enemies(state["bomberman"], state["walls"])
+                closestWall = closest_wall(bomberman_pos, walls)
+
+                p = astar(mapa.map, bomberman_pos, closestWall)
+                print(p)
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
-                )
+                ) 
+                break
             except websockets.exceptions.ConnectionClosedOK:
                 print("Server has cleanly disconnected us")
                 return
@@ -61,8 +53,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
 class Node():
     def __init__(self, parent=None, position=None):
-        self.parent
-        self.position
+        self.parent = parent
+        self.position = position
 
         self.g = 0
         self.h = 0
@@ -118,11 +110,11 @@ def astar(mapa,start,end):
 
         children = [] #lista de nos filhos
 
-        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]: #quadrados
+        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]: #quadrados
 
             node_position = (current_node.position[0]+new_position[0], current_node.position[1]+new_position[1])
 
-            if node_position[0] > (len(mapa) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) -1) or node_position[1] < 0:
+            if node_position[0] > (len(mapa) - 1) or node_position[0] < 0 or node_position[1] > (len(mapa[len(mapa)-1]) -1) or node_position[1] < 0:
                 continue #garante que está dentro do limite
 
             if mapa[node_position[0]][node_position[1]] != 0:
@@ -147,6 +139,28 @@ def astar(mapa,start,end):
                     continue
             
             open_list.append(child) #acrescenta o no filho à openlist
+
+def distance_to(obj1, obj2):
+    return math.sqrt(((obj1[0]-obj2[0])**2)+((obj1[1]-obj2[1])**2))
+
+def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de walls
+
+    dist_min = 123456789
+    
+    for i in walls:
+
+        if(distance_to(bombermanPos, walls[i]) < dist_min): #verifica se a distancia é menor que a anterior
+
+            dist_min = distance_to(bombermanPos, walls[i]) #atualiza a distancia minima
+            minWall = walls[i] #guarda o objeto parede em minWall
+
+    return minWall
+
+
+
+
+
+
 
 
 # DO NOT CHANGE THE LINES BELLOW
