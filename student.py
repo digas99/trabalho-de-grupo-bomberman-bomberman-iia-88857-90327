@@ -10,6 +10,25 @@ from mapa import Map
 
 
 async def agent_loop(server_address="localhost:8000", agent_name="student"):
+
+    def distance_to(obj1, obj2):
+        return math.sqrt(math.pow((obj2[0] - obj1[0]), 2) + math.pow((obj2[1] - obj1[1]), 2))
+
+    def bomb_enemies(bomberman,walls):
+        nmrTrue=0
+        for wall in walls:
+
+            distancia=distance_to(bomberman, wall)
+
+            if(distancia<=3):
+                key = "d"
+                return key
+
+            else:
+                key = "s"
+
+        return key
+
     async with websockets.connect(f"ws://{server_address}/player") as websocket:
 
         # Receive information about static game properties
@@ -20,19 +39,29 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         # You can create your own map representation or use the game representation:
         mapa = Map(size=game_properties["size"], mapa=game_properties["map"])
 
+        lastKey = "s"
+
         while True:
             try:
                 state = json.loads(
                     await websocket.recv()
                 )  # receive game state, this must be called timely or your game will get out of sync with the server
+                bombermanObj = state["bomberman"]
+                wallsObj = state["walls"]
 
+                print(lastKey == "d")
+                if lastKey == "d":
+                    key = "d"
 
-                key="d"
+                elif (lastKey == "s"):
+                    key=bomb_enemies(bombermanObj, wallsObj)
 
-                print(state["bomberman"])
+                print("lastKey: "+lastKey)
+                print("key: "+key)
+                lastKey = key
 
-                path = astar(mapa, start, exit)
-                print(path)
+                #path = astar(mapa, start, exit)
+                #print(path)
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
@@ -43,18 +72,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
         print(state['bomberman'])
 
-    def distance_to(obj1, obj2):
-        return math.sqrt(math.pow((obj2[0] - obj1[0]), 2) + math.pow((obj2[1] - obj1[1]), 2))
-
-    def bomb_enemies(bomberman,walls):
-        for i in walls:
-                        distancia=distance_to(bomberman, i["pos"])
-                        if(distancia<5):
-                            key = "B"
-
-                        elif(distancia>=5):
-                            key = "s"
-        return key
 
 class Node():
     def __init__(self, parent=None, position=None):
