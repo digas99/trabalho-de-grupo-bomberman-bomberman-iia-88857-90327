@@ -31,7 +31,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     await websocket.recv()
                 )  # receive game state, this must be called timely or your game will get out of sync with the server
 
-                key = "s"
+                key = "d"
                 
                 walls = state["walls"] #array de walls
 
@@ -39,7 +39,10 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 closestWall = closest_wall(bomberman_pos, walls)
 
+                print(state["bomberman"])
+
                 p = astar(mapa.map, bomberman_pos, closestWall)
+
                 print(p)
 
                 await websocket.send(
@@ -141,17 +144,22 @@ def astar(mapa,start,end):
             open_list.append(child) #acrescenta o no filho à openlist
 
 def distance_to(obj1, obj2):
-    return math.sqrt(((obj1[0]-obj2[0])**2)+((obj1[1]-obj2[1])**2))
+    distance = math.sqrt(math.pow((obj1[0] - obj2[0]), 2) + math.pow((obj1[1] - obj2[1]), 2))
+
+    return distance
+
 
 def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de walls
 
     dist_min = 123456789
     
-    for i in walls:
+    for i in range(len(walls)):
 
-        if(distance_to(bombermanPos, walls[i]) < dist_min): #verifica se a distancia é menor que a anterior
+        distancia = distance_to(bombermanPos, walls[i])
 
-            dist_min = distance_to(bombermanPos, walls[i]) #atualiza a distancia minima
+        if(distancia < dist_min): #verifica se a distancia é menor que a anterior
+
+            dist_min = distancia #atualiza a distancia minima
             minWall = walls[i] #guarda o objeto parede em minWall
 
     return minWall
