@@ -31,6 +31,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     await websocket.recv()
                 )  # receive game state, this must be called timely or your game will get out of sync with the server
 
+                print(state)
+
                 key = "d"
                 
                 walls = state["walls"] #array de walls
@@ -38,17 +40,18 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 bomberman_pos = state["bomberman"] ##guarda a posicao do bomberman
 
                 closestWall = closest_wall(bomberman_pos, walls)
-
+                print(closestWall)
                 print(state["bomberman"])
+                print(mapa.map)
 
-                p = astar(mapa.map, bomberman_pos, closestWall)
+                key = astar(mapa.map, bomberman_pos, closestWall)
 
-                print(p)
+                #print(p)
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
                 ) 
-                break
+                #break;
             except websockets.exceptions.ConnectionClosedOK:
                 print("Server has cleanly disconnected us")
                 return
@@ -89,7 +92,8 @@ def astar(mapa,start,end):
     open_list.append(start_node) #adiciona o primeiro no à lista
 
     while len(open_list) > 0: #continua a procurar ate encontrar o end_node
-
+        print("end")      
+        print(end)
         #obtem o nó atual
         current_node = open_list[0]
         current_index = 0
@@ -101,14 +105,22 @@ def astar(mapa,start,end):
         
         open_list.pop(current_index) #o nó atual sai da open_list
         close_list.append(current_node) #e vai pra close_list 
-                                        
-        
+
+        print("end_node:")                                
+        print(end_node.g)
+        print(end_node.h)
+        print(end_node.f)
+        print("-------")
+        print(current_node)
         if current_node == end_node:
             path = [] #inicializa o path
             current = current_node
             while current is not None:
                 path.append(current.position) #adiciona o current ao path
                 current = current.parent
+            print("path:")
+            print (path)
+            print("-----")
             return path[::-1] #retorna um path invertido
 
         children = [] #lista de nos filhos
@@ -116,13 +128,20 @@ def astar(mapa,start,end):
         for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]: #quadrados
 
             node_position = (current_node.position[0]+new_position[0], current_node.position[1]+new_position[1])
-
+            
+            print(len(mapa))
+            print (node_position[0])
+            print (node_position[1])
+            print (len(mapa[len(mapa)-1]) -1)
+            #print (node_position[0] > (len(mapa) - 1) or node_position[0] < 0 or node_position[1] > (len(mapa[len(mapa)-1]) -1) or node_position[1] < 0)
             if node_position[0] > (len(mapa) - 1) or node_position[0] < 0 or node_position[1] > (len(mapa[len(mapa)-1]) -1) or node_position[1] < 0:
                 continue #garante que está dentro do limite
 
+
+            print(mapa[node_position[0]][node_position[1]])
             if mapa[node_position[0]][node_position[1]] != 0:
                 continue #garante q está numa zona onde pode passar
-
+    
             new_node = Node(current_node, node_position)
 
             children.append(new_node) #adiciona a novo nó à lista de filhos
@@ -163,13 +182,6 @@ def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de wall
             minWall = walls[i] #guarda o objeto parede em minWall
 
     return minWall
-
-
-
-
-
-
-
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
