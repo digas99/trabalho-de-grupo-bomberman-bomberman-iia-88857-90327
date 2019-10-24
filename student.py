@@ -40,9 +40,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 walls = state['walls']
                 bomberman_string = to_string(bomberman)
 
-                #key = get_key(bomberman_string, to_string(closest_wall(bomberman, walls)))
-                key = "d"
-
                 blocks = get_blocks(mapa, bomberman, closest_wall(bomberman, walls))
                 coordinates = get_coords(blocks)
                 connections = get_conexions(blocks)
@@ -57,14 +54,17 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print (connections)
                 
                 connections = Connections(connections, coordinates)
-                p = SearchProblem(connections, to_string(bomberman_string), to_string(closest_wall(bomberman, walls)))
+    
+                p = SearchProblem(connections, bomberman_string, to_string(closest_wall(bomberman, walls)))
                 t = SearchTree(p,'a*')
 
-                print(t.search(90), t.length, t.ramification)
+                result = t.search(90)
+                print(result, t.length, t.ramification)
 
-                #next_block = t.search[0][1]
-
-                #key = get_key(bomberman_string, next_block)
+                next_block = result[0][1]
+                
+                print(bomberman_string + "<->" + next_block)
+                key = get_key(bomberman_string, next_block)
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
@@ -100,19 +100,21 @@ def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de wall
 def get_key(current_block, next_block):
     c_block_coords = current_block.split(",")
     n_block_coords = next_block.split(",")
+    print (c_block_coords)
+    print (n_block_coords)
 
     # se o x atual for menor que o próximo x
     if (c_block_coords[0] < n_block_coords[0]):
         return "d"
     
-    else:
+    if (c_block_coords[0] > n_block_coords[0]):
         return "a"
     
     if (c_block_coords[1] < n_block_coords[1]):
-        return "w"
-    
-    else:
         return "s"
+    
+    if (c_block_coords[1] > n_block_coords[1]):
+        return "w"
 
 
 
