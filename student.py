@@ -7,7 +7,8 @@ import os
 import math
 
 from mapa import Map
-
+from tree_search import *
+from functions_d import get_blocks
 
 async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
