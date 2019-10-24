@@ -21,14 +21,10 @@ def get_conexions(blocks):
     return conexions
 
 def to_string(ls):
-
-    s = ""
-
-    for i in ls:
-        if(i != (ls[len(ls)-1])):
-            s += str(i) + "," 
-        else:
-            s += str(i)
+    s =""
+    for i in ls[:-1]:
+        s += str(i) + "," 
+    s += str(ls[-1])
 
     return s
 
