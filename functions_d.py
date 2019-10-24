@@ -1,36 +1,38 @@
 from mapa import Map
 
-def get_blocks (start, dest):
-    final_array = []
+# iterates the coordenates from an initial one, to a destiny and returns a list with only coordenates without stones withing those coordenates given
+def get_blocks (mapa, start, dest):
+    final_list = []
     if (start[0] > dest[0]):
-        final_array = iterate_coordsX(start, dest, start[0], dest[0])
+        final_list= iterate_coordsX(mapa, start, dest, start[0], dest[0])
     
     else:
-        final_array = iterate_coordsX(start, dest, dest[0], start[0])
+        final_list = iterate_coordsX(mapa, start, dest, dest[0], start[0])
     
-    return final_array
+    return final_list
 
 
-def iterate_coordsX (start, dest, x_maior, x_menor):
+def iterate_coordsX (mapa, start, dest, x_maior, x_menor):
     aux = []
     for x in range(x_menor, x_maior+1):
         if (start[1] > dest[1]):
-            aux.append(iterate_coordsY(x, start[1], dest[1]))
+            aux.append(iterate_coordsY(mapa, x, start[1], dest[1]))
         
         else:
-            aux.append(iterate_coordsY(x, dest[1], start[1]))
+            aux.append(iterate_coordsY(mapa, x, dest[1], start[1]))
     
     return aux
 
 # is_stone não está a receber os parâmetros corretos
-def iterate_coordsY (x, y_maior, y_menor):
+def iterate_coordsY (mapa, x, y_maior, y_menor):
     aux = []
     for y in range(y_menor, y_maior+1):
-         if (not Map.is_stone([x, y])):
+         if (not mapa.is_stone([x, y])):
             aux.append([x, y])
     
     return aux
 
+# returns a dictionary {coords_string:coords, ...:..., ...}
 def get_coords (list_coords):
     aux_dict = {}
     for c in list_coords:
@@ -38,6 +40,7 @@ def get_coords (list_coords):
     
     return aux_dict
 
+# turn coordenates into a string
 def to_string (coords):
     count = 0
     s = ""
@@ -48,5 +51,3 @@ def to_string (coords):
             s += str(i) +  ","
         count+=1
     return s
-
-print(get_coords(get_blocks([0,0], [2,3])))
