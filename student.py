@@ -5,6 +5,7 @@ import websockets
 import getpass
 import os
 import math
+import random
 
 from mapa import Map
 from tree_search import *
@@ -27,7 +28,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         # You can create your own map representation or use the game representation:
         mapa = Map(size=game_properties["size"], mapa=game_properties["map"])
         
-        
+        last_key = "d"
+        deployed_bomb_counter = 0
 
         while True:
             try:
@@ -39,8 +41,11 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 bomberman = state['bomberman']
                 walls = state['walls']
                 bomberman_string = to_string(bomberman)
+                
+                destiny_wall = closest_wall(bomberman, walls)
 
-                blocks = get_blocks(mapa, bomberman, closest_wall(bomberman, walls))
+
+                blocks = get_blocks(mapa, bomberman, destiny_wall)
                 coordinates = get_coords(blocks)
                 connections = get_conexions(blocks)
 
@@ -55,7 +60,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 
                 connections = Connections(connections, coordinates)
     
-                p = SearchProblem(connections, bomberman_string, to_string(closest_wall(bomberman, walls)))
+                p = SearchProblem(connections, bomberman_string, to_string(destiny_wall))
                 t = SearchTree(p,'a*')
 
                 result = t.search(90)
@@ -63,8 +68,25 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 next_block = result[0][1]
                 
-                print(bomberman_string + "<->" + next_block)
-                key = get_key(bomberman_string, next_block)
+                # check when bomberman get close to the destiny wall and deploy bomb
+                if (len(result[0]) == 2):
+                    key = "B"
+                else:
+                    key = get_key(bomberman_string, next_block)
+
+                # run from bomb
+                if (last_key == "B"):
+                    key = away_from_wall(bomberman, destiny_wall)
+                    deployed_bomb_counter += 1
+
+                if (deployed_bomb_counter > 0):
+                    if (deployed_bomb_counter == 1):
+                        key = last_key
+                        deployed_bomb_counter += 1
+                    else:
+                        key = change_key_randomly(last_key)
+
+                last_key = key
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
@@ -116,7 +138,28 @@ def get_key(current_block, next_block):
     if (c_block_coords[1] > n_block_coords[1]):
         return "w"
 
+def away_from_wall(bomberman, wall):
+    if (bomberman[0] < wall[0]):
+        return "a"
 
+    if (bomberman[0] > wall[0]):
+        return "d"
+
+    if (bomberman[1] < wall[1]):
+        return "w"
+
+    if (bomberman[1] > wall[1]):
+        return "s"
+
+def change_key_randomly(key):
+    diff_keys = []
+    for k in "wasd":
+        if (k != key):
+            diff_keys.append(k)
+    
+    print(diff_keys)
+    return diff_keys[random.randint(0,2)]
+    
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
