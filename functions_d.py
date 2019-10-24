@@ -22,11 +22,31 @@ def iterate_coordsX (start, dest, x_maior, x_menor):
     
     return aux
 
-
+# is_stone não está a receber os parâmetros corretos
 def iterate_coordsY (x, y_maior, y_menor):
     aux = []
     for y in range(y_menor, y_maior+1):
-         if (not Map.is_stone(x, y)):
+         if (not Map.is_stone([x, y])):
             aux.append([x, y])
     
     return aux
+
+def get_coords (list_coords):
+    aux_dict = {}
+    for c in list_coords:
+        aux_dict[to_string(c)] = c
+    
+    return aux_dict
+
+def to_string (coords):
+    count = 0
+    s = ""
+    for i in coords:
+        if (count == len(coords)-1):
+            s += str(i)
+        else:
+            s += str(i) +  ","
+        count+=1
+    return s
+
+print(get_coords(get_blocks([0,0], [2,3])))
