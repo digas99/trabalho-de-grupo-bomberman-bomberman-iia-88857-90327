@@ -10,6 +10,7 @@ from mapa import Map
 from tree_search import *
 from functions_d import get_blocks
 from functions_d import get_coords
+from getConexions import get_conexions
 
 async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
@@ -35,22 +36,23 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 key = "d"
 
-                print(state["walls"])
+                bomberman = state['bomberman']
+                walls = state['walls']
+
+                blocks = get_blocks(mapa, bomberman, closest_wall(bomberman, walls))
+                coordinates = get_coords(blocks)
+                connections = get_conexions(blocks)
+
+                print ("Bomberman: ")
+                print (bomberman)
+                print ("Closest Wall: ")
+                print (closest_wall(bomberman, walls))
+                print ("Coords: ")
+                print (coordinates)
+                print ("Connec: ")
+                print (connections)
+                print("\n")
                 
-                #walls = state["walls"] #array de walls
-
-                #bomberman_pos = state["bomberman"] ##guarda a posicao do bomberman
-
-                #closestWall = closest_wall(bomberman_pos, walls)
-
-                print(state["bomberman"])
-
-                print(mapa.map)
-
-                #p = astar(mapa.map, bomberman_pos, closestWall)
-
-                #print(p)
-
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
                 ) 

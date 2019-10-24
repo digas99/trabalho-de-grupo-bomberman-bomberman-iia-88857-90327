@@ -1,6 +1,6 @@
 import math
 
-blocks = [[1,1], [1,2], [1,3], [2,1], [2,3], [3,1], [3,2], [3,3], [4,1], [4,3]]
+#blocks = [[1,1], [1,2], [1,3], [2,1], [2,3], [3,1], [3,2], [3,3], [4,1], [4,3]]
 
 def distance_to(obj1, obj2):
     distance = math.sqrt(math.pow((obj1[0] - obj2[0]), 2) + math.pow((obj1[1] - obj2[1]), 2))
@@ -28,4 +28,4 @@ def to_string(ls):
 
     return s
 
-print(get_conexions(blocks))
+#print(get_conexions(blocks))

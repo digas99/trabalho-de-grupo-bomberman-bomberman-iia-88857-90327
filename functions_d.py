@@ -3,12 +3,17 @@ from mapa import Map
 # iterates the coordenates from an initial one, to a destiny and returns a list with only coordenates without stones withing those coordenates given
 def get_blocks (mapa, start, dest):
     final_list = []
+    aux = []
     if (start[0] > dest[0]):
-        final_list= iterate_coordsX(mapa, start, dest, start[0], dest[0])
+        aux = iterate_coordsX(mapa, start, dest, start[0], dest[0])
     
     else:
-        final_list = iterate_coordsX(mapa, start, dest, dest[0], start[0])
+        aux = iterate_coordsX(mapa, start, dest, dest[0], start[0])
     
+    for coords in aux:
+        for i in coords:
+            final_list.append(i)
+
     return final_list
 
 
@@ -23,7 +28,6 @@ def iterate_coordsX (mapa, start, dest, x_maior, x_menor):
     
     return aux
 
-# is_stone não está a receber os parâmetros corretos
 def iterate_coordsY (mapa, x, y_maior, y_menor):
     aux = []
     for y in range(y_menor, y_maior+1):
