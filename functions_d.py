@@ -40,7 +40,8 @@ def iterate_coordsY (mapa, x, y_maior, y_menor):
 def get_coords (list_coords):
     aux_dict = {}
     for c in list_coords:
-        aux_dict[to_string(c)] = c
+        tuplo = (c[0], c[1])
+        aux_dict[to_string(c)] = tuplo
     
     return aux_dict
 

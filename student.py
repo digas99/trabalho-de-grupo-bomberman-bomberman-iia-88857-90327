@@ -10,7 +10,9 @@ from mapa import Map
 from tree_search import *
 from functions_d import get_blocks
 from functions_d import get_coords
+from functions_d import to_string
 from getConexions import get_conexions
+from connections import *
 
 async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
@@ -34,10 +36,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     await websocket.recv()
                 )  # receive game state, this must be called timely or your game will get out of sync with the server
 
-                key = "d"
-
                 bomberman = state['bomberman']
                 walls = state['walls']
+                bomberman_string = to_string(bomberman)
+
+                #key = get_key(bomberman_string, to_string(closest_wall(bomberman, walls)))
+                key = "d"
 
                 blocks = get_blocks(mapa, bomberman, closest_wall(bomberman, walls))
                 coordinates = get_coords(blocks)
@@ -51,8 +55,17 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print (coordinates)
                 print ("Connec: ")
                 print (connections)
-                print("\n")
                 
+                connections = Connections(connections, coordinates)
+                p = SearchProblem(connections, to_string(bomberman_string), to_string(closest_wall(bomberman, walls)))
+                t = SearchTree(p,'a*')
+
+                print(t.search(90), t.length, t.ramification)
+
+                #next_block = t.search[0][1]
+
+                #key = get_key(bomberman_string, next_block)
+
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
                 ) 
@@ -84,11 +97,22 @@ def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de wall
 
     return minWall
 
+def get_key(current_block, next_block):
+    c_block_coords = current_block.split(",")
+    n_block_coords = next_block.split(",")
 
-
+    # se o x atual for menor que o próximo x
+    if (c_block_coords[0] < n_block_coords[0]):
+        return "d"
     
-
-
+    else:
+        return "a"
+    
+    if (c_block_coords[1] < n_block_coords[1]):
+        return "w"
+    
+    else:
+        return "s"
 
 
 
