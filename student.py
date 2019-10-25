@@ -32,6 +32,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         deployed_bomb_counter = 0
         destroyed_walls = []
         has_deployed = False
+        after_deploy = False
+        destiny_wall = None
 
         while True:
             try:
@@ -46,13 +48,17 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 walls = [w for w in state['walls'] if w not in destroyed_walls]
                 #walls = state['walls']
                 bomberman_string = to_string(bomberman)
-                
-                destiny_wall = closest_wall(bomberman, walls)
+
+                if (not after_deploy):
+                    destiny_wall = closest_wall(bomberman, walls)
+                    after_deploy = True
 
 
                 blocks = get_blocks(mapa, bomberman, destiny_wall)
                 coordinates = get_coords(blocks)
                 conexions = get_conexions(blocks)
+
+                print(state)
 
                 print("")
                 print ("Bomberman: ")
@@ -71,8 +77,13 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 
                 next_block = result[0][1]
                 
+                # if has discovered the exit, then go for it
+                if (len(state["exit"]) > 0):
+                    next_block = to_string(state["exit"])
+                
                 # let bomberman be in the same position for some frames, to be protected form bomb
                 if (deployed_bomb_counter == 8):
+                    after_deploy = False
                     deployed_bomb_counter = 0
 
                 if (deployed_bomb_counter == 0):
