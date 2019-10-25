@@ -30,6 +30,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         
         last_key = "d"
         deployed_bomb_counter = 0
+        destroyed_walls = []
+        has_deployed = False
 
         while True:
             try:
@@ -39,7 +41,10 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 )  # receive game state, this must be called timely or your game will get out of sync with the server
 
                 bomberman = state['bomberman']
-                walls = state['walls']
+
+                # if there are destroyed walls, then don't add them to the walls we want
+                walls = [w for w in state['walls'] if w not in destroyed_walls]
+                #walls = state['walls']
                 bomberman_string = to_string(bomberman)
                 
                 destiny_wall = closest_wall(bomberman, walls)
@@ -47,47 +52,63 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 blocks = get_blocks(mapa, bomberman, destiny_wall)
                 coordinates = get_coords(blocks)
-                connections = get_conexions(blocks)
+                conexions = get_conexions(blocks)
 
                 print("")
                 print ("Bomberman: ")
                 print (bomberman)
                 print ("Closest Wall: ")
                 print (closest_wall(bomberman, walls))
-                print ("Coords: ")
-                print (coordinates)
-                print ("Connec: ")
-                print (connections)
                 
-                connections = Connections(connections, coordinates)
+                connections = Connections(conexions, coordinates)
     
                 p = SearchProblem(connections, bomberman_string, to_string(destiny_wall))
                 t = SearchTree(p,'a*')
 
                 result = t.search(90)
+                print("Path: ")
                 print(result)
-
+                
                 next_block = result[0][1]
                 
+                # let bomberman be in the same position for some frames, to be protected form bomb
+                if (deployed_bomb_counter == 8):
+                    deployed_bomb_counter = 0
+
+                if (deployed_bomb_counter == 0):
+                    key = get_key(bomberman_string, next_block)
+    
                 # check when bomberman get close to the destiny wall and deploy bomb
                 if (len(result[0]) == 2):
                     key = "B"
-                else:
-                    key = get_key(bomberman_string, next_block)
+                    has_deployed = True
 
                 # run from bomb
-                if (last_key == "B"):
+                if (last_key == "B" or deployed_bomb_counter == 1):
                     key = away_from_wall(bomberman, destiny_wall)
                     deployed_bomb_counter += 1
-
-                if (deployed_bomb_counter > 0):
-                    if (deployed_bomb_counter == 1):
-                        key = last_key
-                        deployed_bomb_counter += 1
+                
+                if (deployed_bomb_counter > 1):
+                    # if bomberman is between stones, one block after he deploys the bomb, then go one more block on the same direction
+                    print("Is between stones")
+                    print(is_between_stones(mapa, bomberman))
+                    if (is_between_stones(mapa, bomberman)):
+                        if (deployed_bomb_counter == 2):
+                            key = last_key
+                        elif (deployed_bomb_counter == 3):
+                            key = change_key_randomly(last_key)
+                        else:
+                            key = ""
                     else:
                         key = change_key_randomly(last_key)
+                    deployed_bomb_counter += 1
 
+
+                print("counter: ")
+                print(deployed_bomb_counter)
                 last_key = key
+                print("Key:")
+                print(key)
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
@@ -123,6 +144,8 @@ def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de wall
 def get_key(current_block, next_block):
     c_block_coords = current_block.split(",")
     n_block_coords = next_block.split(",")
+    c_block_coords = coords_to_int(c_block_coords)
+    n_block_coords = coords_to_int(n_block_coords)
 
     # se o x atual for menor que o próximo x
     if (c_block_coords[0] < n_block_coords[0]):
@@ -151,14 +174,36 @@ def away_from_wall(bomberman, wall):
         return "s"
 
 def change_key_randomly(key):
-    diff_keys = []
-    for k in "wasd":
-        if (k != key):
-            diff_keys.append(k)
+    oppos_key = ""
+    if (key == "a"):
+        oppos_key = "d"
+    if (key == "w"):
+        oppos_key = "s"
+    if (key == "d"):
+        oppos_key = "a"
+    if (key == "s"):
+        oppos_key = "w"
+    
+    print("Key:")
+    print(key)
+    print("Oppos_key: ")
+    print(oppos_key)
+    diff_keys = [k for k in "wasd" if (k != key and k != oppos_key)]
     
     print(diff_keys)
-    return diff_keys[random.randint(0,2)]
+    return diff_keys[random.randint(0,1)]
+
+def is_between_stones(mapa, coords):
+    # has stones on both sides of x axis
+    if (mapa.is_stone([coords[0]-1, coords[1]]) and mapa.is_stone([coords[0]+1, coords[1]])):
+        return True
+    #has stones on both sides of y axis
+    if (mapa.is_stone([coords[0], coords[1]-1]) and mapa.is_stone([coords[0], coords[1]+1])):
+        return True
+    return False
     
+def coords_to_int(coords):
+    return [int(coords[0]), int(coords[1])]
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
