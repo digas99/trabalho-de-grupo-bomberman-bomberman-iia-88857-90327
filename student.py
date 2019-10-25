@@ -49,6 +49,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 coordinates = get_coords(blocks)
                 connections = get_conexions(blocks)
 
+                print("")
                 print ("Bomberman: ")
                 print (bomberman)
                 print ("Closest Wall: ")
@@ -64,7 +65,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 t = SearchTree(p,'a*')
 
                 result = t.search(90)
-                print(result, t.length, t.ramification)
+                print(result)
 
                 next_block = result[0][1]
                 
@@ -122,8 +123,6 @@ def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de wall
 def get_key(current_block, next_block):
     c_block_coords = current_block.split(",")
     n_block_coords = next_block.split(",")
-    print (c_block_coords)
-    print (n_block_coords)
 
     # se o x atual for menor que o próximo x
     if (c_block_coords[0] < n_block_coords[0]):

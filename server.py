@@ -66,6 +66,10 @@ class Game_server:
 
                     if path == "/viewer":
                         self.viewers.add(websocket)
+                        if self.game.running:
+                            game_info = self.game.info()
+                            game_info["highscores"] = self._highscores
+                            await websocket.send(json.dumps(game_info))
 
                 if data["cmd"] == "key" and self.current_player.ws == websocket:
                     logger.debug((self.current_player.name, data))

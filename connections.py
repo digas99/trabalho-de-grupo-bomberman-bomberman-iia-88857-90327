@@ -28,8 +28,8 @@ class Connections(SearchDomain):
             if action == (P1,c2) or action == (c2,P1):
                 return D;
     def heuristic(self, state, goal_state):
-        print(state)
-        print(goal_state)
+        #print(state)
+        #print(goal_state)
         c1_x,c1_y = self.coordinates[state]
         c2_x,c2_y = self.coordinates[goal_state]
 
