@@ -308,7 +308,7 @@ def draw_background(mapa):
 
 
 def draw_info(SCREEN, text, pos, color=(0, 0, 0), background=None):
-    myfont = pygame.font.Font(None, int(22 / SCALE))
+    myfont = pygame.font.Font(None, int(24 / SCALE))
     textsurface = myfont.render(text, True, color, background)
 
     x, y = pos
@@ -355,7 +355,7 @@ async def main_game():
     SCREEN.blit(BACKGROUND, (0, 0))
     main_group.add(BomberMan(pos=mapa.bomberman_spawn))
 
-    state = {"score": 0, "player": "player1", "bomberman": (1, 1)}
+    state = {"score": 0, "player": "player1", "bomberman": (1, 1), "lives": 0}
 
     while True:
         pygame.event.pump()
@@ -367,10 +367,17 @@ async def main_game():
         enemies_group.clear(SCREEN, clear_callback)
 
         if "score" in state and "player" in state:
+            draw_info(SCREEN, "Score: ", (1, 0),)
             text = str(state["score"])
-            draw_info(SCREEN, text.zfill(6), (0, 0))
-            text = str(state["player"]).rjust(32)
-            draw_info(SCREEN, text, (4000, 0))
+            draw_info(SCREEN, text.zfill(6), (54, 0), color=(200, 0, 0))
+            
+            draw_info(SCREEN, "Lives: ", (125, 0))
+            text = str(state["lives"]).rjust(10)
+            draw_info(SCREEN, text, (145, 0), color=(200, 0, 0))
+
+            draw_info(SCREEN, "Player: ", (696, 0))
+            text = str(state["player"]).rjust(12)
+            draw_info(SCREEN, text, (735, -1), color=(0, 25, 200))
 
         if "bombs" in state:
             for bomb in bombs_group:
