@@ -165,7 +165,8 @@ class Game:
         self._enemies = [
             t(p) for t, p in zip(LEVEL_ENEMIES[level], self.map.enemies_spawn)
         ]
-        logger.debug(self._enemies)
+        logger.debug("Enemies: %s", [(e._name, e.pos) for e in self._enemies])
+        logger.debug("Walls: %s", self.map.walls)
 
     def quit(self):
         logger.debug("Quit")
@@ -286,6 +287,9 @@ class Game:
             for enemy in self._enemies:
                 enemy.move(self.map, self._bomberman, self._bombs)
             self.collision()
+
+        #sanity check
+        assert all([ep not in self.map.walls for ep in [e.pos for e in self._enemies if not e._wallpass]])
 
         self._state = {
             "level": self.map.level,

@@ -222,6 +222,7 @@ class Bomb(Artifact):
                     self.radius * 2 * CHAR_LENGTH + CHAR_LENGTH,
                 )
             )
+            self.image.set_colorkey((0,0,0))
             self.image.blit(
                 SPRITES,
                 scale((self.radius, self.radius)),
@@ -313,7 +314,7 @@ def draw_info(SCREEN, text, pos, color=(0, 0, 0), background=None):
 
     x, y = pos
     if x > SCREEN.get_width():
-        pos = SCREEN.get_width() - textsurface.get_width(), y
+        pos = SCREEN.get_width() - (textsurface.get_width() +10), y
     if y > SCREEN.get_height():
         pos = x, SCREEN.get_height() - textsurface.get_height()
 
@@ -322,7 +323,6 @@ def draw_info(SCREEN, text, pos, color=(0, 0, 0), background=None):
     else:
         erase = pygame.Surface(textsurface.get_size())
         erase.fill(COLORS["grey"])
-        # SCREEN.blit(erase, pos)
 
     SCREEN.blit(textsurface, pos)
 
@@ -358,6 +358,7 @@ async def main_game():
     state = {"score": 0, "player": "player1", "bomberman": (1, 1), "lives": 0}
 
     while True:
+#        SCREEN.blit(BACKGROUND, (0, 0))
         pygame.event.pump()
         if pygame.key.get_pressed()[pygame.K_ESCAPE]:
             asyncio.get_event_loop().stop()
@@ -369,6 +370,7 @@ async def main_game():
         if "score" in state and "player" in state:
             draw_info(SCREEN, "Score: ", (1, 0),)
             text = str(state["score"])
+<<<<<<< HEAD
             draw_info(SCREEN, text.zfill(6), (54, 0), color=(200, 0, 0))
             
             draw_info(SCREEN, "Lives: ", (125, 0))
@@ -378,6 +380,21 @@ async def main_game():
             draw_info(SCREEN, "Player: ", (696, 0))
             text = str(state["player"]).rjust(12)
             draw_info(SCREEN, text, (735, -1), color=(0, 25, 200))
+=======
+            draw_info(SCREEN, text.zfill(6), (5, 1))
+            text = str(state["player"]).rjust(32)
+            draw_info(SCREEN, text, (4000, 1))
+
+        if "lives" in state and "level" in state:
+            text = "lives: "
+            draw_info(SCREEN, text, (300,1))
+            text = f"           {state['lives']}"
+            draw_info(SCREEN, text, (300,1),color=(255, 0, 0))
+            text = "level: "
+            draw_info(SCREEN, text, (450,1))
+            text = f"           {state['level']}"
+            draw_info(SCREEN, text, (450,1),color=(255, 0, 0))
+>>>>>>> upstream/master
 
         if "bombs" in state:
             for bomb in bombs_group:
