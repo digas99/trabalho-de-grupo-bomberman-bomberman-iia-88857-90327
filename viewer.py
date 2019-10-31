@@ -370,7 +370,6 @@ async def main_game():
         if "score" in state and "player" in state:
             draw_info(SCREEN, "Score: ", (1, 0),)
             text = str(state["score"])
-<<<<<<< HEAD
             draw_info(SCREEN, text.zfill(6), (54, 0), color=(200, 0, 0))
             
             draw_info(SCREEN, "Lives: ", (125, 0))
@@ -380,21 +379,6 @@ async def main_game():
             draw_info(SCREEN, "Player: ", (696, 0))
             text = str(state["player"]).rjust(12)
             draw_info(SCREEN, text, (735, -1), color=(0, 25, 200))
-=======
-            draw_info(SCREEN, text.zfill(6), (5, 1))
-            text = str(state["player"]).rjust(32)
-            draw_info(SCREEN, text, (4000, 1))
-
-        if "lives" in state and "level" in state:
-            text = "lives: "
-            draw_info(SCREEN, text, (300,1))
-            text = f"           {state['lives']}"
-            draw_info(SCREEN, text, (300,1),color=(255, 0, 0))
-            text = "level: "
-            draw_info(SCREEN, text, (450,1))
-            text = f"           {state['level']}"
-            draw_info(SCREEN, text, (450,1),color=(255, 0, 0))
->>>>>>> upstream/master
 
         if "bombs" in state:
             for bomb in bombs_group:
