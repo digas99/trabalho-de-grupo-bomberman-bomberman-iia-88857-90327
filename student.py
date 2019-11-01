@@ -38,10 +38,10 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         before_last_block = "0, 0"
         stepCount = 0
         array_keys= []
-        powerup_discover = False
+        powerup_discovered = False
         level = 0
         count_powerups = 0
-        
+        powerup_picked_up = False
 
 
         while True:
@@ -153,8 +153,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 
 
                     print("Path: ")
-                
-                
+                    print(result)            
 
                     #para quando fica sem path
                     if(result == None):
@@ -202,11 +201,11 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                             if (deployed_bomb_counter == 2):
                                 key = last_key
                             elif (deployed_bomb_counter == 3):
-                                key = change_key_randomly(last_key)
+                                key = change_key_randomly(last_key, bomberman, destiny_wall, walls, deployed_bomb_counter)
                             else:
                                 key = ""
                         else:
-                            key = change_key_randomly(last_key)
+                            key = change_key_randomly(last_key, bomberman, destiny_wall, walls, deployed_bomb_counter)
                         deployed_bomb_counter += 1
 
 
@@ -284,23 +283,64 @@ def away_from_wall(bomberman, wall):
     if (bomberman[1] > wall[1]):
         return "s"
 
-def change_key_randomly(key):
-    oppos_key = ""
-    if (key == "a"):
-        oppos_key = "d"
-    if (key == "w"):
-        oppos_key = "s"
-    if (key == "d"):
-        oppos_key = "a"
-    if (key == "s"):
-        oppos_key = "w"
+def change_key_randomly(key, bomberman, destiny, walls, counter):
+    print("Bomberman in rand_key:")
+    print(bomberman)
+    print("Destiny in rand_key:")
+    print(destiny)
+    # se o bomberman estiver no canto superior do mapa
+    if (bomberman[1] == 1):
+        # tem uma wall na mesma linha
+        if (bomberman[1] == destiny[1] or counter == 4):
+            return "s"
+
+    # se o bomberman estiver no canto inferior do mapa
+    if (bomberman[1] == 29):
+        if (bomberman[1] == destiny[1] or counter == 4):
+            return "w"
+
+    # se o bomberman estiver no canto esquerdo do mapa
+    if (bomberman[0] == 1):
+        if (bomberman[0] == destiny[0] or counter == 4):
+            return "d"
+
+    # se o bomberman estiver no canto direito do mapa
+    if (bomberman[0] == 49):
+        if (bomberman[0] == destiny[0] or counter == 4):
+            return "a"
     
     print("Key:")
     print(key)
     print("Oppos_key: ")
+    oppos_key = opposite_key(key)
     print(oppos_key)
     diff_keys = [k for k in "wasd" if (k != key and k != oppos_key)]
-    
+
+    future_coords = {}
+    # get destiny coords from diff_keys
+    for d in diff_keys:
+        if (d == "w"):
+            future_coords['w'] = [bomberman[0], bomberman[1]-1]
+        
+        if (d == "a"):
+            future_coords['a'] = [bomberman[0]-1, bomberman[1]]
+
+        if (d == "s"):
+            future_coords['s'] = [bomberman[0], bomberman[1]+1]
+        
+        if (d == "d"):
+            future_coords['d'] = [bomberman[0]+1, bomberman[1]]
+
+    print("Future coords:")
+    print(future_coords)
+    for c in future_coords:
+        for w in walls:
+            # a próxima posição é uma wall
+            if (future_coords.get(c)[0] == w[0] and future_coords.get(c)[1] == w[1]):
+                print("returned after getting wall on future coord")
+                return opposite_key(c)
+
+    print("Diff Keys")
     print(diff_keys)
     return diff_keys[random.randint(0,1)]
 
@@ -342,6 +382,15 @@ def path_to_array_keys(path):
 
     return array_keys
 
+def opposite_key(key):
+    if (key == "a"):
+        return "d"
+    if (key == "w"):
+        return "s"
+    if (key == "d"):
+        return "a"
+    if (key == "s"):
+        return "w"
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:

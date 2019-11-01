@@ -36,10 +36,7 @@ class Connections(SearchDomain):
         return math.hypot(c1_x-c2_x,c1_y-c2_y)
 
 blocks = [[7, 2], [7, 3], [7, 4], [7, 5], [8, 3], [8, 5], [9, 2], [9, 3], [9, 4], [9, 5], [10, 3], [10, 5]]
-print("String coords: ")
-print(get_coords(blocks))
-print("String conex")
-print(get_conexions(blocks))
+
 connections = Connections(get_conexions(blocks), get_coords(blocks))
 p = SearchProblem(connections,'7,2','10,5')
 t = SearchTree(p,'a*')
@@ -50,5 +47,3 @@ def search_path(c1,c2,strategy):
     my_tree = SearchTree(my_prob)
     my_tree.strategy = strategy
     return my_tree.search()
-
-print(t.search(90), t.length, t.ramification)
