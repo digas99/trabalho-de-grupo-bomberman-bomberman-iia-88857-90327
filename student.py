@@ -79,141 +79,107 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     powerup_discover = True
                 
                 elif powerup == [] and powerup_discover:
-                    count_powerups += 1
-                
-                if (stepCount < 308 and array_keys==[]) or (state['walls']== [] and state['enemies'] != [] and array_keys==[]):
-                    if bomberman != [1,1]:
+                    count_powerups += 1  
 
-                        blocks = get_blocks(mapa, bomberman, [1,1])
-                        coordinates = get_coords(blocks)
-                        conexions = get_conexions(blocks)
-                        connections = Connections(conexions, coordinates)
-                        print(to_string(bomberman))
-                        print(to_string([1,1]))
-                        p = SearchProblem(connections, to_string(bomberman), to_string([1,1]))
-                        t = SearchTree(p,'a*')
-                        result = t.search(90)
-                        array_keys = path_to_array_keys(result[0])
-                    else:
-                        
-                        if count_powerups > 0: 
-                            array_keys = ["d","d","B","a","a","s","","","","","","","w"]
+                # if there are destroyed walls, then don't add them to the walls we want
+                walls = state['walls']
+                #walls = state['walls']
+                bomberman_string = to_string(bomberman)
+        
 
-                        else:
-                            array_keys = ["d","d","B","a","a","s","","","","","w"]
-                
-                elif state["exit"] != [] and state["enemies"] == [] and array_keys == []:
-                        blocks = get_blocks(mapa, bomberman, state["exit"])
-                        coordinates = get_coords(blocks)
-                        conexions = get_conexions(blocks)
-                        connections = Connections(conexions, coordinates)
-                        p = SearchProblem(connections, to_string(bomberman), to_string(state["exit"]))
-                        t = SearchTree(p,'a*')
-                        result = t.search(90)
-                        array_keys = path_to_array_keys(result[0])
-                    
+                if(len(walls) != 0):
+                    if (not after_deploy):
+                        destiny_wall = closest_wall(bomberman, walls)
+                        after_deploy = True
+                    else: 
+                        next_block = "1, 0"
 
-                elif stepCount >= 308 and state['walls']!= []:    
+                blocks = get_blocks(mapa, bomberman, destiny_wall)
+                coordinates = get_coords(blocks)
+                conexions = get_conexions(blocks)
 
-                    # if there are destroyed walls, then don't add them to the walls we want
-                    walls = [w for w in state['walls'] if w not in destroyed_walls]
-                    #walls = state['walls']
-                    bomberman_string = to_string(bomberman)
+                connections = Connections(conexions, coordinates)
+
+                p = SearchProblem(connections, bomberman_string, to_string(destiny_wall))
+                t = SearchTree(p,'a*')
+
+                result = t.search(90)
+
+                print(result)
             
 
-                    if(len(walls) != 0):
-                        if (not after_deploy):
-                            destiny_wall = closest_wall(bomberman, walls)
-                            after_deploy = True
-                        else: 
-                            next_block = "1, 0"
+                print(state)
 
-                    blocks = get_blocks(mapa, bomberman, destiny_wall)
-                    coordinates = get_coords(blocks)
-                    conexions = get_conexions(blocks)
+                print("")
+                print ("Bomberman: ")
+                print (bomberman)
+                print ("Closest Wall: ")
+                print (closest_wall(bomberman, walls))
+            
+            
 
-                    connections = Connections(conexions, coordinates)
-    
-                    p = SearchProblem(connections, bomberman_string, to_string(destiny_wall))
-                    t = SearchTree(p,'a*')
+                print("Path: ")
+                print(result)            
 
-                    result = t.search(90)
+                #para quando fica sem path
+                if(result == None):
+                    next_block = before_last_block
+                else:
+                    next_block = result[0][1]
+            
+                before_last_block = last_block
+                last_block = next_block
+            
+                #if has discovered the exit, then go for it
+                #if (len(state["exit"]) > 0):
+                #    next_block = to_string(state["exit"])
 
-                    print(result)
                 
+            
+                # let bomberman be in the same position for some frames, to be protected form bomb
+                if(count_powerups>0):
+                    if (deployed_bomb_counter == 10):
+                        after_deploy = False
+                        deployed_bomb_counter = 0
+                else:
+                    if (deployed_bomb_counter == 8):
+                        after_deploy = False
+                        deployed_bomb_counter = 0
 
-                    print(state)
+                if (deployed_bomb_counter == 0):
+                    key = get_key(bomberman_string, next_block)
 
-                    print("")
-                    print ("Bomberman: ")
-                    print (bomberman)
-                    print ("Closest Wall: ")
-                    print (closest_wall(bomberman, walls))
-                
-                
+                # check when bomberman get close to the destiny wall and deploy bomb
+                if (result != None and len(result[0]) == 2):
+                    key = "B"
+                    has_deployed = True
 
-                    print("Path: ")
-                    print(result)            
-
-                    #para quando fica sem path
-                    if(result == None):
-                        next_block = before_last_block
-                    else:
-                        next_block = result[0][1]
-                
-                    before_last_block = last_block
-                    last_block = next_block
-                
-                    #if has discovered the exit, then go for it
-                    #if (len(state["exit"]) > 0):
-                    #    next_block = to_string(state["exit"])
-
-                    
-                
-                    # let bomberman be in the same position for some frames, to be protected form bomb
-                    if(count_powerups>0):
-                        if (deployed_bomb_counter == 10):
-                            after_deploy = False
-                            deployed_bomb_counter = 0
-                    else:
-                        if (deployed_bomb_counter == 8):
-                            after_deploy = False
-                            deployed_bomb_counter = 0
-
-                    if (deployed_bomb_counter == 0):
-                        key = get_key(bomberman_string, next_block)
-    
-                    # check when bomberman get close to the destiny wall and deploy bomb
-                    if (result != None and len(result[0]) == 2):
-                        key = "B"
-                        has_deployed = True
-
-                    # run from bomb
-                    if (last_key == "B" or deployed_bomb_counter == 1):
-                        key = away_from_wall(bomberman, destiny_wall)
-                        deployed_bomb_counter += 1
-                
-                    if (deployed_bomb_counter > 1):
-                        # if bomberman is between stones, one block after he deploys the bomb, then go one more block on the same direction
-                        print("Is between stones")
-                        print(is_between_stones(mapa, bomberman))
-                        if (is_between_stones(mapa, bomberman)):
-                            if (deployed_bomb_counter == 2):
-                                key = last_key
-                            elif (deployed_bomb_counter == 3):
-                                key = change_key_randomly(last_key, bomberman, destiny_wall, walls, deployed_bomb_counter)
-                            else:
-                                key = ""
-                        else:
+                # run from bomb
+                if (last_key == "B" or deployed_bomb_counter == 1):
+                    key = away_from_wall(bomberman, destiny_wall)
+                    deployed_bomb_counter += 1
+            
+                if (deployed_bomb_counter > 1):
+                    # if bomberman is between stones, one block after he deploys the bomb, then go one more block on the same direction
+                    print("Is between stones")
+                    print(is_between_stones(mapa, bomberman))
+                    if (is_between_stones(mapa, bomberman)):
+                        if (deployed_bomb_counter == 2):
+                            key = last_key
+                        elif (deployed_bomb_counter == 3):
                             key = change_key_randomly(last_key, bomberman, destiny_wall, walls, deployed_bomb_counter)
-                        deployed_bomb_counter += 1
+                        else:
+                            key = ""
+                    else:
+                        key = change_key_randomly(last_key, bomberman, destiny_wall, walls, deployed_bomb_counter)
+                    deployed_bomb_counter += 1
 
 
-                    print("counter: ")
-                    print(deployed_bomb_counter)
-                    last_key = key
-                    print("Key:")
-                    print(key)
+                print("counter: ")
+                print(deployed_bomb_counter)
+                last_key = key
+                print("Key:")
+                print(key)
 
                 if array_keys != []:
                     key= array_keys.pop(0)
