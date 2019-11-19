@@ -42,11 +42,19 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         level = 0
         count_powerups = 0
         powerup_picked_up = False
+        wall_spotted = False
+        values = {}
+        wall_spotted = False
+        balloom_spotted = False
+        oneal_within_range = False
+        current_state = -1
 
 
         while True:
             try:
-                
+                print("")
+                print("BEGINNING OF LOOP")
+
                 state = json.loads(
                     await websocket.recv()
                 )  # receive game state, this must be called timely or your game will get out of sync with the server
@@ -71,9 +79,25 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     powerup_discover = False
                     has_powerup = count_powerups
 
+                wall_spotted = False
+                balloom_spotted = False
+                oneal_within_range = False
+
+                current_level = state['level']
+
                 bomberman = state['bomberman']
                 powerup = state["powerups"]
                 
+                enemies = state['enemies']
+
+                if (current_level == 2):
+                    # fetching only Oneals
+                    enem_oneal = [enemy for enemy in enemies if enemy['name'] == "Oneal"]
+                    #fetching coords of oneals
+                    enem_oneal_coords = [c['pos'] for c in enem_oneal]
+
+                enem_bal = [enemy for enemy in enemies if enemy['name'] == "Balloom"]
+                enem_bal_coords = [c['pos'] for c in enem_bal]
 
                 if powerup != []:
                     powerup_discover = True
@@ -83,40 +107,33 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 # if there are destroyed walls, then don't add them to the walls we want
                 walls = state['walls']
-                #walls = state['walls']
                 bomberman_string = to_string(bomberman)
-        
+                
 
                 if(len(walls) != 0):
                     if (not after_deploy):
-                        destiny_wall = closest_wall(bomberman, walls)
-                        after_deploy = True
+                        destiny_wall = closest_entity(bomberman, walls)
+                        # after_deploy = True
                     else: 
                         next_block = "1, 0"
 
-                blocks = get_blocks(mapa, bomberman, destiny_wall)
+                if (len(enem_oneal) > 0):
+                    destiny = closest_entity(bomberman, enem_oneal_coords)
+
+                blocks = get_blocks(mapa, bomberman, destiny)
                 coordinates = get_coords(blocks)
                 conexions = get_conexions(blocks)
 
                 connections = Connections(conexions, coordinates)
 
-                p = SearchProblem(connections, bomberman_string, to_string(destiny_wall))
+                p = SearchProblem(connections, bomberman_string, to_string(destiny))
                 t = SearchTree(p,'a*')
 
                 result = t.search(90)
 
-                print(result)
-            
-
-                print(state)
-
                 print("")
                 print ("Bomberman: ")
                 print (bomberman)
-                print ("Closest Wall: ")
-                print (closest_wall(bomberman, walls))
-            
-            
 
                 print("Path: ")
                 print(result)            
@@ -129,54 +146,69 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
             
                 before_last_block = last_block
                 last_block = next_block
-            
-                #if has discovered the exit, then go for it
-                #if (len(state["exit"]) > 0):
-                #    next_block = to_string(state["exit"])
-
                 
+                next_block_strings_arr = next_block.split(",")
+                next_block_arr = [int(s) for s in next_block_strings_arr]
             
-                # let bomberman be in the same position for some frames, to be protected form bomb
-                if(count_powerups>0):
-                    if (deployed_bomb_counter == 10):
-                        after_deploy = False
-                        deployed_bomb_counter = 0
-                else:
-                    if (deployed_bomb_counter == 8):
-                        after_deploy = False
-                        deployed_bomb_counter = 0
+                # if has discovered the exit, then go for it
+                if (len(state["exit"]) > 0 and len(enemies) == 0):
+                   next_block = to_string(state["exit"])
+
+                # CHECK FOR WALLS ON THE WAY
+                if (is_wall(walls, next_block_arr)):
+                    wall_spotted = True
+
+                # CHECK IF ONEAL IS WITHING RANGE
+                for oneal in enem_oneal_coords:
+                    if (in_range(bomberman, oneal, 1)):
+                        oneal_within_range = True
+                
+                # CHECK IF BALLOOM IN WITHIN RANGE
+                balloom_in_range = None
+                for balloom in enem_bal_coords:
+                    if (in_range(bomberman, balloom, 2)):
+                        balloom_in_range = balloom
+                        balloom_spotted = True
 
                 if (deployed_bomb_counter == 0):
                     key = get_key(bomberman_string, next_block)
 
-                # check when bomberman get close to the destiny wall and deploy bomb
-                if (result != None and len(result[0]) == 2):
+        
+                if (oneal_within_range or balloom_spotted or wall_spotted):
                     key = "B"
                     has_deployed = True
+                
+                if (after_deploy == False):
+                    if (oneal_within_range):
+                        current_state = 0
+                    elif (balloom_spotted):
+                        current_state = 1
+                    elif (wall_spotted):
+                        current_state = 2
 
-                # run from bomb
-                if (last_key == "B" or deployed_bomb_counter == 1):
-                    key = away_from_wall(bomberman, destiny_wall)
-                    deployed_bomb_counter += 1
-            
-                if (deployed_bomb_counter > 1):
-                    # if bomberman is between stones, one block after he deploys the bomb, then go one more block on the same direction
-                    print("Is between stones")
-                    print(is_between_stones(mapa, bomberman))
-                    if (is_between_stones(mapa, bomberman)):
-                        if (deployed_bomb_counter == 2):
-                            key = last_key
-                        elif (deployed_bomb_counter == 3):
-                            key = change_key_randomly(last_key, bomberman, destiny_wall, walls, deployed_bomb_counter)
-                        else:
-                            key = ""
-                    else:
-                        key = change_key_randomly(last_key, bomberman, destiny_wall, walls, deployed_bomb_counter)
-                    deployed_bomb_counter += 1
+                # BOMB DEPLOYMENT---------------------------------------------------------------------
 
+                if (key == "B" or after_deploy):
+                    print("KEY IS B")
+                    print("DEPLOY BOMB COUNTER: %d" % deployed_bomb_counter)
+                    print("AFTER DEPLOY: %s" % after_deploy)
+                    if (current_state == 0):
+                        print("DEPLOYING OVER ONEAL")
+                        print(destiny)
+                        values = deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy)
+                    elif (current_state == 1):
+                        print("DEPLOYING OVER BALLOOM")
+                        print(balloom_in_range)
+                        values = deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman, balloom_in_range, walls, key, after_deploy)
+                    elif (current_state == 2):
+                        print("DEPLOYING OVER WALL")
+                        print(destiny_wall)
+                        values = deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman, destiny_wall, walls, key, after_deploy)
 
-                print("counter: ")
-                print(deployed_bomb_counter)
+                    key = values["key"]
+                    deployed_bomb_counter = values["dbc"]
+                    after_deploy = values["ad"]
+
                 last_key = key
                 print("Key:")
                 print(key)
@@ -202,20 +234,20 @@ def distance_to(obj1, obj2):
     return distance
 
 
-def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de walls
+def closest_entity(bombermanPos, entities): #entradas sao o bomberman e array de walls
 
     dist_min = 123456789
     
-    for i in range(len(walls)):
+    for i in range(len(entities)):
 
-        distancia = distance_to(bombermanPos, walls[i])
+        distancia = distance_to(bombermanPos, entities[i])
 
         if(distancia < dist_min): #verifica se a distancia é menor que a anterior
 
             dist_min = distancia #atualiza a distancia minima
-            minWall = walls[i] #guarda o objeto parede em minWall
+            minEnt = entities[i] #guarda o objeto parede em minWall
 
-    return minWall
+    return minEnt
 
 def get_key(current_block, next_block):
     c_block_coords = current_block.split(",")
@@ -357,6 +389,54 @@ def opposite_key(key):
         return "a"
     if (key == "s"):
         return "w"
+
+def is_wall(walls, next_coord):
+    for wall in walls:
+        if (wall[0] == next_coord[0] and wall[1] == next_coord[1]):
+            return True
+    return False
+
+def in_range(entity1, entity2, range_val):
+    if (abs(entity1[0] - entity2[0]) <= range_val and abs(entity1[1] - entity2[1]) <= range_val):
+        return True
+    return False
+
+def deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy):
+    after_deploy = True
+    # let bomberman be in the same position for some frames, to be protected form bomb
+    if(count_powerups>0):
+        if (deployed_bomb_counter == 10):
+            after_deploy = False
+            deployed_bomb_counter = 0
+    else:
+        if (deployed_bomb_counter == 8):
+            after_deploy = False
+            deployed_bomb_counter = 0
+
+    # run from bomb
+    if (last_key == "B" or deployed_bomb_counter == 1):
+        key = away_from_wall(bomberman, destiny)
+        deployed_bomb_counter += 1
+
+    if (deployed_bomb_counter > 1):
+        # if bomberman is between stones, one block after he deploys the bomb, then go one more block on the same direction
+        if (is_between_stones(mapa, bomberman)):
+            if (deployed_bomb_counter == 2):
+                key = last_key
+            elif (deployed_bomb_counter == 3):
+                key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
+            else:
+                key = ""
+        else:
+            key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
+        deployed_bomb_counter += 1
+    
+    print("")
+    print("RETURN OF DEPLOY BOMB")
+    print("DEPLOY BOMB COUNTER: %d" % deployed_bomb_counter)
+    print("AFTER DEPLOY: %s" % after_deploy)
+    return {"key":key, "ad":after_deploy, "dbc":deployed_bomb_counter}
+
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
