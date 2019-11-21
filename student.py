@@ -118,7 +118,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 connections = Connections(conexions, coordinates)
 
                 p = SearchProblem(connections, bomberman_string, to_string(destiny))
-                t = SearchTree(p,'a*')
+                t = SearchTree(p,'greedy')
 
                 result = t.search(90)
 
@@ -199,8 +199,9 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         if (balloom_in_range != None):
                             values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, balloom_in_range, walls, key, after_deploy)
                         else:
-                            balloom_in_range = False
-                            wall_spotted = True
+                            # balloom_in_range = False
+                            # wall_spotted = True
+                            current_state = 2
                     elif (current_state == 2):
                         print("DEPLOYING OVER WALL")
                         print(destiny_wall)
@@ -433,7 +434,7 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, desti
                 print("Size of fakeWall array")
                 print(fakeWall)
                 if (len(fakeWall) == 1):
-                    key = away_from_wall(bomberman, fakeWall)
+                    key = away_from_wall(bomberman, fakeWall[0])
                 else:
                     key = away_from_wall(bomberman, fakeWall[random.randint(0,1)])
         deployed_bomb_counter += 1
@@ -474,18 +475,18 @@ def is_between_walls(walls, bomberman):
     # check the left and right coords
     if (is_wall(walls, [bombX-1, bombY]) and is_wall(walls, [bombX+1, bombY])):
         if (is_wall(walls, [bombX, bombY-1])):
-            return [bombX, bombY-1]
+            return [[bombX, bombY-1]]
         elif (is_wall(walls, [bombX, bombY+1])):
-            return [bombX, bombY+1]
+            return [[bombX, bombY+1]]
         else:
             return [[bombX, bombY-1], [bombX, bombY+1]]
     
     # check the up and down coords
     if (is_wall(walls, [bombX, bombY-1]) and is_wall(walls, [bombX, bombY+1])):
         if (is_wall(walls, [bombX-1, bombY])):
-            return [bombX-1, bombY]
+            return [[bombX-1, bombY]]
         elif (is_wall(walls, [bombX+1, bombY])):
-            return [bombX+1, bombY]
+            return [[bombX+1, bombY]]
         else:
             return [[bombX-1, bombY], [bombX+1, bombY]]
     
