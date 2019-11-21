@@ -40,8 +40,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         array_keys= []
         powerup_discovered = False
         level = 0
-        count_powerups = 0
-        powerup_picked_up = False
         wall_spotted = False
         values = {}
         wall_spotted = False
@@ -63,21 +61,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     state = json.loads(
                         await websocket.recv()
                     )
-                
-                if level < state["level"]:
-                    level += 1 
-                    last_key = ""
-                    deployed_bomb_counter = 0
-                    destroyed_walls = []
-                    has_deployed = False
-                    after_deploy = False
-                    destiny_wall = None
-                    last_block = "0, 0"
-                    before_last_block = "0, 0"
-                    stepCount = 0
-                    array_keys= []
-                    powerup_discover = False
-                    has_powerup = count_powerups
 
                 wall_spotted = False
                 balloom_spotted = False
@@ -88,6 +71,9 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 bomberman = state['bomberman']
                 powerup = state["powerups"]
                 
+                print("POWERUPS:")
+                print(powerup)
+
                 enemies = state['enemies']
 
                 if (current_level == 2):
@@ -98,12 +84,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 enem_bal = [enemy for enemy in enemies if enemy['name'] == "Balloom"]
                 enem_bal_coords = [c['pos'] for c in enem_bal]
-
-                if powerup != []:
-                    powerup_discover = True
-                
-                elif powerup == [] and powerup_discover:
-                    count_powerups += 1  
 
                 # if there are destroyed walls, then don't add them to the walls we want
                 walls = state['walls']
@@ -119,6 +99,17 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 if (len(enem_oneal) > 0):
                     destiny = closest_entity(bomberman, enem_oneal_coords)
+                # se já não houverem mais oneals, foca nas walls até encontrar os powerups todos    
+                else:
+                    bombsCoords = powerupCoords(powerup, 'Bombs')
+                    # se ainda não tiver encontrado o powerup Bombs 
+                    if (bombsCoords == None):
+                        destiny = destiny_wall
+                    else:
+                        destiny = bombsCoords
+                        # verificar se o bomberman apanhou o powerup bombs
+                        if (sameCoords(bomberman, bombsCoords)):
+                            destiny = closest_entity(bomberman, enem_bal_coords)
 
                 blocks = get_blocks(mapa, bomberman, destiny)
                 coordinates = get_coords(blocks)
@@ -138,7 +129,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print("Path: ")
                 print(result)            
 
-                #para quando fica sem path
+                # para quando fica sem path
                 if(result == None):
                     next_block = before_last_block
                 else:
@@ -156,12 +147,16 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 # CHECK FOR WALLS ON THE WAY
                 if (is_wall(walls, next_block_arr)):
+                    oneal_within_range = False
+                    balloom_spotted = False
                     wall_spotted = True
 
                 # CHECK IF ONEAL IS WITHING RANGE
                 for oneal in enem_oneal_coords:
-                    if (in_range(bomberman, oneal, 1)):
+                    if (in_range(bomberman, oneal, 2)):
                         oneal_within_range = True
+                        balloom_spotted = False
+                        wall_spotted = False
                 
                 # CHECK IF BALLOOM IN WITHIN RANGE
                 balloom_in_range = None
@@ -169,6 +164,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     if (in_range(bomberman, balloom, 2)):
                         balloom_in_range = balloom
                         balloom_spotted = True
+                        oneal_within_range = False
+                        wall_spotted = False
 
                 if (deployed_bomb_counter == 0):
                     key = get_key(bomberman_string, next_block)
@@ -195,15 +192,19 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     if (current_state == 0):
                         print("DEPLOYING OVER ONEAL")
                         print(destiny)
-                        values = deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy)
                     elif (current_state == 1):
                         print("DEPLOYING OVER BALLOOM")
                         print(balloom_in_range)
-                        values = deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman, balloom_in_range, walls, key, after_deploy)
+                        if (balloom_in_range != None):
+                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, balloom_in_range, walls, key, after_deploy)
+                        else:
+                            balloom_in_range = False
+                            wall_spotted = True
                     elif (current_state == 2):
                         print("DEPLOYING OVER WALL")
                         print(destiny_wall)
-                        values = deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman, destiny_wall, walls, key, after_deploy)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny_wall, walls, key, after_deploy)
 
                     key = values["key"]
                     deployed_bomb_counter = values["dbc"]
@@ -269,6 +270,10 @@ def get_key(current_block, next_block):
         return "w"
 
 def away_from_wall(bomberman, wall):
+    print("Bomberman in away_from_wall")
+    print(bomberman)
+    print("Wall in away_from_wall")
+    print(wall)
     if (bomberman[0] < wall[0]):
         return "a"
 
@@ -390,9 +395,9 @@ def opposite_key(key):
     if (key == "s"):
         return "w"
 
-def is_wall(walls, next_coord):
+def is_wall(walls, coords):
     for wall in walls:
-        if (wall[0] == next_coord[0] and wall[1] == next_coord[1]):
+        if (sameCoords(wall, coords)):
             return True
     return False
 
@@ -401,10 +406,10 @@ def in_range(entity1, entity2, range_val):
         return True
     return False
 
-def deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy):
+def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy):
     after_deploy = True
     # let bomberman be in the same position for some frames, to be protected form bomb
-    if(count_powerups>0):
+    if(powerupCoords(powerup, 'Flames') != None): 
         if (deployed_bomb_counter == 10):
             after_deploy = False
             deployed_bomb_counter = 0
@@ -414,8 +419,23 @@ def deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman
             deployed_bomb_counter = 0
 
     # run from bomb
+    print("DEPLOYED BOMB COUNTER INSIDE DEPLOY BOMB")
+    print(deployed_bomb_counter)
     if (last_key == "B" or deployed_bomb_counter == 1):
-        key = away_from_wall(bomberman, destiny)
+        print("HEREEEE")
+        if (destiny != None):
+            # check if bomberman is between walls
+            fakeWall = is_between_walls(walls, bomberman)
+            if (fakeWall == None):
+                key = away_from_wall(bomberman, destiny)
+            else:
+                # faz um away_from_wall personalizado
+                print("Size of fakeWall array")
+                print(fakeWall)
+                if (len(fakeWall) == 1):
+                    key = away_from_wall(bomberman, fakeWall)
+                else:
+                    key = away_from_wall(bomberman, fakeWall[random.randint(0,1)])
         deployed_bomb_counter += 1
 
     if (deployed_bomb_counter > 1):
@@ -437,6 +457,39 @@ def deploy_bomb(count_powerups, deployed_bomb_counter, last_key, mapa, bomberman
     print("AFTER DEPLOY: %s" % after_deploy)
     return {"key":key, "ad":after_deploy, "dbc":deployed_bomb_counter}
 
+def powerupCoords(powerups, name):
+    for p in powerups:
+        if (p[1] == name):
+            return p[0]
+    return None
+
+def sameCoords(a, b):
+    return a[0] == b[0] and a[1] == b[1]
+
+# função retorna a(s) coord(s) que não é/são wall(s) 
+def is_between_walls(walls, bomberman):
+    bombX = bomberman[0]
+    bombY = bomberman[1]
+
+    # check the left and right coords
+    if (is_wall(walls, [bombX-1, bombY]) and is_wall(walls, [bombX+1, bombY])):
+        if (is_wall(walls, [bombX, bombY-1])):
+            return [bombX, bombY-1]
+        elif (is_wall(walls, [bombX, bombY+1])):
+            return [bombX, bombY+1]
+        else:
+            return [[bombX, bombY-1], [bombX, bombY+1]]
+    
+    # check the up and down coords
+    if (is_wall(walls, [bombX, bombY-1]) and is_wall(walls, [bombX, bombY+1])):
+        if (is_wall(walls, [bombX-1, bombY])):
+            return [bombX-1, bombY]
+        elif (is_wall(walls, [bombX+1, bombY])):
+            return [bombX+1, bombY]
+        else:
+            return [[bombX-1, bombY], [bombX+1, bombY]]
+    
+    return None
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
