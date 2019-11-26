@@ -37,6 +37,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         last_block = "0, 0"
         before_last_block = "0, 0"
         stepCount = 0
+<<<<<<< HEAD:student2.py
         array_keys= []
         powerup_discover = False
         level = 0
@@ -44,13 +45,33 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         powerup_picked_up = False
         current_state = 0
         
+=======
+        array_keys= ["d","d","B","a","a","s","","","","","","","w"]
+        powerup_discovered = {"Flames":False, "Bombs":False, "Detonator":False, "Speed":False}
+        powerup_pickedup = {"Flames":False, "Bombs":False, "Detonator":False, "Speed":False}
+        level = 0
+        wall_spotted = False
+        values = {}
+        wall_spotted = False
+        balloom_spotted = False
+        oneal_within_range = False
+        current_state = -1
+        corner_killing = False
+        key_none_resolving_flag = True
+>>>>>>> level2:student.py
 
 
         while True:
             try:
+<<<<<<< HEAD:student2.py
                 print(" ")
                 print("BEGINNING OF LOOP!!!")
                 
+=======
+                print("")
+                print("BEGINNING OF LOOP")
+
+>>>>>>> level2:student.py
                 state = json.loads(
                     await websocket.recv()
                 )  # receive game state, this must be called timely or your game will get out of sync with the server
@@ -59,6 +80,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     state = json.loads(
                         await websocket.recv()
                     )
+<<<<<<< HEAD:student2.py
                 
                 if level < state["level"]:
                     level += 1 
@@ -78,6 +100,14 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     wall_spotted = False
                     balloom_in_range = None
                     
+=======
+
+                wall_spotted = False
+                balloom_spotted = False
+                oneal_within_range = False
+
+                current_level = state['level']
+>>>>>>> level2:student.py
 
                 bomberman = state['bomberman']
                 powerup = state["powerups"]
@@ -85,6 +115,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 enem = state["enemies"] #Guarda os inimigos num array
                 enem_coords = [c['pos'] for c in enem] #Guarda as coordenadas de cada balloom
                 
+<<<<<<< HEAD:student2.py
                 balloom_spotted = False
 
                 if powerup != []:
@@ -165,16 +196,92 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         else: 
                             next_block = "1, 0"
 
+=======
+                print("POWERUPS:")
+                print(powerup)
+
+                enemies = state['enemies']
+
+                # fetching only Oneals
+                enem_oneal = [enemy for enemy in enemies if enemy['name'] == "Oneal"]
+                #fetching coords of oneals
+                if (enem_oneal != None):
+                    enem_oneal_coords = [c['pos'] for c in enem_oneal]
+
+                enem_bal = [enemy for enemy in enemies if enemy['name'] == "Balloom"]
+                if (enem_bal != None):
+                    enem_bal_coords = [c['pos'] for c in enem_bal]
+                
+                if (len(array_keys) == 0 and len(enem_bal) > 0):
+                    array_keys= ["d","d","B","a","a","s","","","","","","","w"]
+
+                # if there are destroyed walls, then don't add them to the walls we want
+                walls = state['walls']
+                bomberman_string = to_string(bomberman)
+                
+
+                if(len(walls) != 0):
+                    if (not after_deploy):
+                        destiny_wall = closest_entity(bomberman, walls)
+                        # after_deploy = True
+                    else: 
+                        next_block = "1, 0"
+
+                if (len(enem_oneal) > 0):
+                    destiny = closest_entity(bomberman, enem_oneal_coords)
+
+                # se já não houverem mais oneals, foca nas walls   
+                else:
+                    destiny = destiny_wall
+
+                # if the array of powerups has some powerup in it
+                if (powerup != []):
+                    # then, if it wasn't pickedup, do it
+                    for p in powerup:
+                        powerup_coords = get_powerup_coords(powerup, p[1], powerup_discovered, powerup_pickedup)
+                        if (powerup_coords != None):
+                            destiny = powerup_coords["next_block"]
+                            powerup_discovered[p[1]] = powerup_coords["discovered"]
+                            powerup_pickedup[p[1]] = powerup_coords["pickedup"]
+
+                # if has discovered the exit, then go for it
+                if (len(state["exit"]) > 0 and len(enemies) == 0 and powerup_pickedup["Flames"]):
+                    print("EXIT")
+                    print(state["exit"])
+                    destiny = state["exit"]
+
+
+                if (len(walls) == 0 and len(enem_bal) > 0):
+                    destiny = [1,1]
+                    if (bomberman == [1,1]):
+                        corner_killing = True
+                
+                print("Corner Killing before tree search")
+                print(corner_killing)
+                if (not corner_killing):
+                    print("is going to tree search")
+>>>>>>> level2:student.py
                     blocks = get_blocks(mapa, bomberman, destiny)
                     coordinates = get_coords(blocks)
                     conexions = get_conexions(blocks)
                     connections = Connections(conexions, coordinates)
+<<<<<<< HEAD:student2.py
                     p = SearchProblem(connections, bomberman_string, to_string(destiny))
                     t = SearchTree(p,'a*')
                     result = t.search(90)
 
                     print(result)
                     print(state)
+=======
+
+                    p = SearchProblem(connections, bomberman_string, to_string(destiny))
+                    if (current_level == 1):
+                        t = SearchTree(p,'a*')
+                    else:
+                        t = SearchTree(p,'greedy')
+
+                    result = t.search(90)
+>>>>>>> level2:student.py
 
                     print("")
                     print("enemie coord: ")
@@ -183,19 +290,24 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     print(closest_enemy(bomberman, enem_coords))
                     print ("Bomberman: ")
                     print (bomberman)
+<<<<<<< HEAD:student2.py
                     print ("Closest Wall: ")
                     print (closest_wall(bomberman, walls))
+=======
+
+>>>>>>> level2:student.py
                     print("Path: ")
                     print(result)            
 
-                    #para quando fica sem path
+                    # para quando fica sem path
                     if(result == None):
                         next_block = before_last_block
                     else:
                         next_block = result[0][1]
-                
+            
                     before_last_block = last_block
                     last_block = next_block
+<<<<<<< HEAD:student2.py
 
                     # let bomberman be in the same position for some frames, to be protected from bomb
                     if(count_powerups>0):
@@ -245,15 +357,103 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                             key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
                         deployed_bomb_counter += 1
 
+=======
+                    
+                    next_block_strings_arr = next_block.split(",")
+                    next_block_arr = [int(s) for s in next_block_strings_arr]
 
-                    print("counter: ")
-                    print(deployed_bomb_counter)
+
+                print("NEXT BLOCK")
+                print(next_block)
+                # CHECK FOR WALLS ON THE WAY
+                if (is_wall(walls, next_block_arr)):
+                    oneal_within_range = False
+                    balloom_spotted = False
+                    wall_spotted = True
+
+                # CHECK IF ONEAL IS WITHING RANGE
+                for oneal in enem_oneal_coords:
+                    if (in_range(bomberman, oneal, 2)):
+                        oneal_within_range = True
+                        balloom_spotted = False
+                        wall_spotted = False
+                
+                # CHECK IF BALLOOM IN WITHIN RANGE
+                # balloom_in_range = None
+                # for balloom in enem_bal_coords:
+                #     if (in_range(bomberman, balloom, 4)):
+                #         oneal_within_range = False
+                #         balloom_spotted = True
+                #         wall_spotted = False
+
+                if (deployed_bomb_counter == 0):
+                    key = get_key(bomberman_string, next_block)
+
+        
+                if (oneal_within_range or balloom_spotted or wall_spotted):
+                    key = "B"
+                    has_deployed = True
+                
+                if (after_deploy == False):
+                    if (oneal_within_range):
+                        current_state = 0
+                    elif (balloom_spotted):
+                        current_state = 1
+                    elif (wall_spotted):
+                        current_state = 2
+
+                # BOMB DEPLOYMENT---------------------------------------------------------------------
+
+                if (key == "B" or after_deploy):
+                    print("KEY IS B")
+                    print("DEPLOY BOMB COUNTER: %d" % deployed_bomb_counter)
+                    print("AFTER DEPLOY: %s" % after_deploy)
+                    if (current_state == 0):
+                        print("DEPLOYING OVER ONEAL")
+                        print(destiny)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
+                    elif (current_state == 1):
+                        print("DEPLOYING OVER BALLOOM")
+                        print(balloom_in_range)
+                        if (balloom_in_range != None):
+                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, balloom_in_range, walls, key, after_deploy, powerup_pickedup)
+                        else:
+                            # balloom_in_range = False
+                            # wall_spotted = True
+                            current_state = 2
+                    elif (current_state == 2):
+                        print("DEPLOYING OVER WALL")
+                        print(destiny_wall)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny_wall, walls, key, after_deploy, powerup_pickedup)
+
+                    key = values["key"]
+                    deployed_bomb_counter = values["dbc"]
+                    after_deploy = values["ad"]
+>>>>>>> level2:student.py
+
                     last_key = key
                     print("Key:")
                     print(key)
 
-                if array_keys != []:
-                    key= array_keys.pop(0)
+                print("Array keys before POP")
+                print(array_keys)
+
+                if (corner_killing and len(array_keys) > 0):
+                    key = array_keys.pop(0)
+                
+                print("LEN ENEM BAL")
+                print(len(enem_bal))
+                if (len(enem_bal) == 0):
+                    corner_killing = False
+                    if (key_none_resolving_flag):
+                        key = ""
+                        key_none_resolving_flag = False
+
+                print("Array keys after POP")
+                print(array_keys)
+
+                print("Key:")
+                print(key)
 
                 stepCount+= 1        
 
@@ -287,20 +487,20 @@ def closest_enemy(bombermanPos, enem):
 
     return minEnemy
 
-def closest_wall(bombermanPos, walls): #entradas sao o bomberman e array de walls
+def closest_entity(bombermanPos, entities): #entradas sao o bomberman e array de walls
 
     dist_min = 123456789
     
-    for i in range(len(walls)):
+    for i in range(len(entities)):
 
-        distancia = distance_to(bombermanPos, walls[i])
+        distancia = distance_to(bombermanPos, entities[i])
 
         if(distancia < dist_min): #verifica se a distancia é menor que a anterior
 
             dist_min = distancia #atualiza a distancia minima
-            minWall = walls[i] #guarda o objeto parede em minWall
+            minEnt = entities[i] #guarda o objeto parede em minWall
 
-    return minWall
+    return minEnt
 
 def get_key(current_block, next_block):
     c_block_coords = current_block.split(",")
@@ -322,6 +522,10 @@ def get_key(current_block, next_block):
         return "w"
 
 def away_from_wall(bomberman, wall):
+    print("Bomberman in away_from_wall")
+    print(bomberman)
+    print("Wall in away_from_wall")
+    print(wall)
     if (bomberman[0] < wall[0]):
         return "a"
 
@@ -443,16 +647,138 @@ def opposite_key(key):
     if (key == "s"):
         return "w"
 
+<<<<<<< HEAD:student2.py
 def in_range(entity1, entity2, range_val): #vê tudo o que está no raio range_val
+=======
+def is_wall(walls, coords):
+    for wall in walls:
+        if (sameCoords(wall, coords)):
+            return True
+    return False
+
+def in_range(entity1, entity2, range_val):
+>>>>>>> level2:student.py
     if (abs(entity1[0] - entity2[0]) <= range_val and abs(entity1[1] - entity2[1]) <= range_val):
         return True
     return False
 
+<<<<<<< HEAD:student2.py
 def same_line(entity1, entity2): #ve se o bomberman e o enemy estao no mesmo eixo
     if entity1[0] == entity2[0] or entity1[1] == entity2[1]:
         return True
     return False
 
+=======
+def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy, pickedup):
+    after_deploy = True
+    # let bomberman be in the same position for some frames, to be protected form bomb
+    if(pickedup["Flames"]): 
+        if (deployed_bomb_counter == 10):
+            after_deploy = False
+            deployed_bomb_counter = 0
+    else:
+        if (deployed_bomb_counter == 8):
+            after_deploy = False
+            deployed_bomb_counter = 0
+
+    # run from bomb
+    print("DEPLOYED BOMB COUNTER INSIDE DEPLOY BOMB")
+    print(deployed_bomb_counter)
+    if (last_key == "B" or deployed_bomb_counter == 1):
+        print("HEREEEE")
+        if (destiny != None):
+            # check if bomberman is between walls
+            fakeWall = is_between_walls(walls, bomberman)
+            if (fakeWall == None):
+                key = away_from_wall(bomberman, destiny)
+            else:
+                # faz um away_from_wall personalizado
+                print("Size of fakeWall array")
+                print(fakeWall)
+                if (len(fakeWall) == 1):
+                    key = away_from_wall(bomberman, fakeWall[0])
+                else:
+                    key = away_from_wall(bomberman, fakeWall[random.randint(0,1)])
+        deployed_bomb_counter += 1
+
+    if (deployed_bomb_counter > 1):
+        # if bomberman is between stones, one block after he deploys the bomb, then go one more block on the same direction
+        if (is_between_stones(mapa, bomberman)):
+            if (deployed_bomb_counter == 2):
+                key = last_key
+            elif (deployed_bomb_counter == 3):
+                key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
+            else:
+                key = ""
+        else:
+            key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
+        deployed_bomb_counter += 1
+    
+    print("")
+    print("RETURN OF DEPLOY BOMB")
+    print("DEPLOY BOMB COUNTER: %d" % deployed_bomb_counter)
+    print("AFTER DEPLOY: %s" % after_deploy)
+    return {"key":key, "ad":after_deploy, "dbc":deployed_bomb_counter}
+
+def entityCoords(arr_entities, name):
+    for p in arr_entities:
+        if (p[1] == name):
+            return p[0]
+    return None
+
+def sameCoords(a, b):
+    return a[0] == b[0] and a[1] == b[1]
+
+# função retorna a(s) coord(s) que não é/são wall(s) 
+def is_between_walls(walls, bomberman):
+    bombX = bomberman[0]
+    bombY = bomberman[1]
+
+    # check the left and right coords
+    if (is_wall(walls, [bombX-1, bombY]) and is_wall(walls, [bombX+1, bombY])):
+        if (is_wall(walls, [bombX, bombY-1])):
+            return [[bombX, bombY-1]]
+        elif (is_wall(walls, [bombX, bombY+1])):
+            return [[bombX, bombY+1]]
+        else:
+            return [[bombX, bombY-1], [bombX, bombY+1]]
+    
+    # check the up and down coords
+    if (is_wall(walls, [bombX, bombY-1]) and is_wall(walls, [bombX, bombY+1])):
+        if (is_wall(walls, [bombX-1, bombY])):
+            return [[bombX-1, bombY]]
+        elif (is_wall(walls, [bombX+1, bombY])):
+            return [[bombX+1, bombY]]
+        else:
+            return [[bombX-1, bombY], [bombX+1, bombY]]
+    
+    return None
+
+def check_powerup_discovered(array, nome):
+    if (entityCoords(array, nome) != None):
+        return True
+    return False
+
+def check_powerup_pickedup(inArray, discovered):
+    if (discovered and inArray == None):
+        return True
+    return False
+
+def get_powerup_coords(array, name, discovered, pickedup):
+    # check if Flames was discovered, only if it is False
+    if (not discovered[name]):
+        discovered[name] = check_powerup_discovered(array, name)
+
+    # check if Flames was pickedup
+    pickedup[name] = check_powerup_pickedup(entityCoords(array, name), discovered[name])
+
+    # if Flames was discovered but not pickedup yet, then next_block is the coords of Flames
+    if (discovered[name] and not pickedup[name]):
+        next_block = entityCoords(array, name)
+
+    return {"next_block":next_block, "discovered":discovered, "pickedup":pickedup}
+
+>>>>>>> level2:student.py
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
 # $ NAME='bombastico' python3 client.py
