@@ -37,8 +37,9 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         last_block = "0, 0"
         before_last_block = "0, 0"
         stepCount = 0
-        array_keys= []
-        powerup_discovered = False
+        array_keys= ["d","d","B","a","a","s","","","","","","","w"]
+        powerup_discovered = {"Flames":False, "Bombs":False, "Detonator":False, "Speed":False}
+        powerup_pickedup = {"Flames":False, "Bombs":False, "Detonator":False, "Speed":False}
         level = 0
         wall_spotted = False
         values = {}
@@ -46,6 +47,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         balloom_spotted = False
         oneal_within_range = False
         current_state = -1
+        corner_killing = False
+        key_none_resolving_flag = True
 
 
         while True:
@@ -76,14 +79,18 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 enemies = state['enemies']
 
-                if (current_level == 2):
-                    # fetching only Oneals
-                    enem_oneal = [enemy for enemy in enemies if enemy['name'] == "Oneal"]
-                    #fetching coords of oneals
+                # fetching only Oneals
+                enem_oneal = [enemy for enemy in enemies if enemy['name'] == "Oneal"]
+                #fetching coords of oneals
+                if (enem_oneal != None):
                     enem_oneal_coords = [c['pos'] for c in enem_oneal]
 
                 enem_bal = [enemy for enemy in enemies if enemy['name'] == "Balloom"]
-                enem_bal_coords = [c['pos'] for c in enem_bal]
+                if (enem_bal != None):
+                    enem_bal_coords = [c['pos'] for c in enem_bal]
+                
+                if (len(array_keys) == 0 and len(enem_bal) > 0):
+                    array_keys= ["d","d","B","a","a","s","","","","","","","w"]
 
                 # if there are destroyed walls, then don't add them to the walls we want
                 walls = state['walls']
@@ -99,52 +106,73 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 if (len(enem_oneal) > 0):
                     destiny = closest_entity(bomberman, enem_oneal_coords)
-                # se já não houverem mais oneals, foca nas walls até encontrar os powerups todos    
+
+                # se já não houverem mais oneals, foca nas walls   
                 else:
-                    bombsCoords = powerupCoords(powerup, 'Bombs')
-                    # se ainda não tiver encontrado o powerup Bombs 
-                    if (bombsCoords == None):
-                        destiny = destiny_wall
-                    else:
-                        destiny = bombsCoords
-                        # verificar se o bomberman apanhou o powerup bombs
-                        if (sameCoords(bomberman, bombsCoords)):
-                            destiny = closest_entity(bomberman, enem_bal_coords)
+                    destiny = destiny_wall
 
-                blocks = get_blocks(mapa, bomberman, destiny)
-                coordinates = get_coords(blocks)
-                conexions = get_conexions(blocks)
+                # if the array of powerups has some powerup in it
+                if (powerup != []):
+                    # then, if it wasn't pickedup, do it
+                    for p in powerup:
+                        powerup_coords = get_powerup_coords(powerup, p[1], powerup_discovered, powerup_pickedup)
+                        if (powerup_coords != None):
+                            destiny = powerup_coords["next_block"]
+                            powerup_discovered[p[1]] = powerup_coords["discovered"]
+                            powerup_pickedup[p[1]] = powerup_coords["pickedup"]
 
-                connections = Connections(conexions, coordinates)
-
-                p = SearchProblem(connections, bomberman_string, to_string(destiny))
-                t = SearchTree(p,'greedy')
-
-                result = t.search(90)
-
-                print("")
-                print ("Bomberman: ")
-                print (bomberman)
-
-                print("Path: ")
-                print(result)            
-
-                # para quando fica sem path
-                if(result == None):
-                    next_block = before_last_block
-                else:
-                    next_block = result[0][1]
-            
-                before_last_block = last_block
-                last_block = next_block
-                
-                next_block_strings_arr = next_block.split(",")
-                next_block_arr = [int(s) for s in next_block_strings_arr]
-            
                 # if has discovered the exit, then go for it
-                if (len(state["exit"]) > 0 and len(enemies) == 0):
-                   next_block = to_string(state["exit"])
+                if (len(state["exit"]) > 0 and len(enemies) == 0 and powerup_pickedup["Flames"]):
+                    print("EXIT")
+                    print(state["exit"])
+                    destiny = state["exit"]
 
+
+                if (len(walls) == 0 and len(enem_bal) > 0):
+                    destiny = [1,1]
+                    if (bomberman == [1,1]):
+                        corner_killing = True
+                
+                print("Corner Killing before tree search")
+                print(corner_killing)
+                if (not corner_killing):
+                    print("is going to tree search")
+                    blocks = get_blocks(mapa, bomberman, destiny)
+                    coordinates = get_coords(blocks)
+                    conexions = get_conexions(blocks)
+
+                    connections = Connections(conexions, coordinates)
+
+                    p = SearchProblem(connections, bomberman_string, to_string(destiny))
+                    if (current_level == 1):
+                        t = SearchTree(p,'a*')
+                    else:
+                        t = SearchTree(p,'greedy')
+
+                    result = t.search(90)
+
+                    print("")
+                    print ("Bomberman: ")
+                    print (bomberman)
+
+                    print("Path: ")
+                    print(result)            
+
+                    # para quando fica sem path
+                    if(result == None):
+                        next_block = before_last_block
+                    else:
+                        next_block = result[0][1]
+            
+                    before_last_block = last_block
+                    last_block = next_block
+                    
+                    next_block_strings_arr = next_block.split(",")
+                    next_block_arr = [int(s) for s in next_block_strings_arr]
+
+
+                print("NEXT BLOCK")
+                print(next_block)
                 # CHECK FOR WALLS ON THE WAY
                 if (is_wall(walls, next_block_arr)):
                     oneal_within_range = False
@@ -159,13 +187,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         wall_spotted = False
                 
                 # CHECK IF BALLOOM IN WITHIN RANGE
-                balloom_in_range = None
-                for balloom in enem_bal_coords:
-                    if (in_range(bomberman, balloom, 2)):
-                        balloom_in_range = balloom
-                        balloom_spotted = True
-                        oneal_within_range = False
-                        wall_spotted = False
+                # balloom_in_range = None
+                # for balloom in enem_bal_coords:
+                #     if (in_range(bomberman, balloom, 4)):
+                #         oneal_within_range = False
+                #         balloom_spotted = True
+                #         wall_spotted = False
 
                 if (deployed_bomb_counter == 0):
                     key = get_key(bomberman_string, next_block)
@@ -192,12 +219,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     if (current_state == 0):
                         print("DEPLOYING OVER ONEAL")
                         print(destiny)
-                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
                     elif (current_state == 1):
                         print("DEPLOYING OVER BALLOOM")
                         print(balloom_in_range)
                         if (balloom_in_range != None):
-                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, balloom_in_range, walls, key, after_deploy)
+                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, balloom_in_range, walls, key, after_deploy, powerup_pickedup)
                         else:
                             # balloom_in_range = False
                             # wall_spotted = True
@@ -205,18 +232,35 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     elif (current_state == 2):
                         print("DEPLOYING OVER WALL")
                         print(destiny_wall)
-                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny_wall, walls, key, after_deploy)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny_wall, walls, key, after_deploy, powerup_pickedup)
 
                     key = values["key"]
                     deployed_bomb_counter = values["dbc"]
                     after_deploy = values["ad"]
 
-                last_key = key
+                    last_key = key
+                    print("Key:")
+                    print(key)
+
+                print("Array keys before POP")
+                print(array_keys)
+
+                if (corner_killing and len(array_keys) > 0):
+                    key = array_keys.pop(0)
+                
+                print("LEN ENEM BAL")
+                print(len(enem_bal))
+                if (len(enem_bal) == 0):
+                    corner_killing = False
+                    if (key_none_resolving_flag):
+                        key = ""
+                        key_none_resolving_flag = False
+
+                print("Array keys after POP")
+                print(array_keys)
+
                 print("Key:")
                 print(key)
-
-                if array_keys != []:
-                    key= array_keys.pop(0)
 
                 stepCount+= 1        
 
@@ -407,10 +451,10 @@ def in_range(entity1, entity2, range_val):
         return True
     return False
 
-def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy):
+def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy, pickedup):
     after_deploy = True
     # let bomberman be in the same position for some frames, to be protected form bomb
-    if(powerupCoords(powerup, 'Flames') != None): 
+    if(pickedup["Flames"]): 
         if (deployed_bomb_counter == 10):
             after_deploy = False
             deployed_bomb_counter = 0
@@ -458,8 +502,8 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, desti
     print("AFTER DEPLOY: %s" % after_deploy)
     return {"key":key, "ad":after_deploy, "dbc":deployed_bomb_counter}
 
-def powerupCoords(powerups, name):
-    for p in powerups:
+def entityCoords(arr_entities, name):
+    for p in arr_entities:
         if (p[1] == name):
             return p[0]
     return None
@@ -491,6 +535,30 @@ def is_between_walls(walls, bomberman):
             return [[bombX-1, bombY], [bombX+1, bombY]]
     
     return None
+
+def check_powerup_discovered(array, nome):
+    if (entityCoords(array, nome) != None):
+        return True
+    return False
+
+def check_powerup_pickedup(inArray, discovered):
+    if (discovered and inArray == None):
+        return True
+    return False
+
+def get_powerup_coords(array, name, discovered, pickedup):
+    # check if Flames was discovered, only if it is False
+    if (not discovered[name]):
+        discovered[name] = check_powerup_discovered(array, name)
+
+    # check if Flames was pickedup
+    pickedup[name] = check_powerup_pickedup(entityCoords(array, name), discovered[name])
+
+    # if Flames was discovered but not pickedup yet, then next_block is the coords of Flames
+    if (discovered[name] and not pickedup[name]):
+        next_block = entityCoords(array, name)
+
+    return {"next_block":next_block, "discovered":discovered, "pickedup":pickedup}
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
