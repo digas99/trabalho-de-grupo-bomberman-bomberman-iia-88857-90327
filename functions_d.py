@@ -4,10 +4,6 @@ from mapa import Map
 def get_blocks (mapa, start, dest):
     final_list = []
     aux = []
-    print("Start")
-    print(start)
-    print("Destiny")
-    print(dest)
     if (start[0] > dest[0]):
         aux = iterate_coordsX(mapa, start, dest, start[0], dest[0])
     
