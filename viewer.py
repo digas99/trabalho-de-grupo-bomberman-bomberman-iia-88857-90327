@@ -48,8 +48,34 @@ MINVO = {
     "down": (2 * 16, 18 * 16),
     "right": (3 * 16, 18 * 16),
 }
-ENEMIES = {"Balloom": BALLOOM, "Oneal": ONEAL, "Doll": DOLL, "Minvo": MINVO}
-POWERUPS = {"Bombs": (0, 14 * 16), "Flames": (1 * 16, 14 * 16), "Detonator": (4 * 16, 14 * 16)}
+KONDORIA = {
+    "up": (0, 19 * 16),
+    "left": (16, 19 * 16),
+    "down": (2 * 16, 19 * 16),
+    "right": (3 * 16, 19 * 16),
+}
+OVAPI = {
+    "up": (0, 20 * 16),
+    "left": (16, 20 * 16),
+    "down": (2 * 16, 20 * 16),
+    "right": (3 * 16, 20 * 16),
+}
+PASS = {
+    "up": (0, 21 * 16),
+    "left": (16, 21 * 16),
+    "down": (2 * 16, 21 * 16),
+    "right": (3 * 16, 21 * 16),
+}
+ENEMIES = {"Balloom": BALLOOM, "Oneal": ONEAL, "Doll": DOLL, "Minvo": MINVO, "Kondoria": KONDORIA, "Ovapi": OVAPI, "Pass": PASS}
+POWERUPS = {"Bombs": (0, 14 * 16), 
+			"Flames": (1 * 16, 14 * 16), 
+			"Speed": (2 * 16, 14 * 16), 
+			"Wallpass": (3 * 16, 14 * 16), 
+			"Detonator": (4 * 16, 14 * 16),
+			"Bombpass": (5 * 16, 14 * 16),
+			"Flamepass": (6 * 16, 14 * 16),
+			"Mystery": (7 * 16, 14 * 16),
+			}
 STONE = (48, 48)
 WALL = (64, 48)
 PASSAGE = (0, 64)
@@ -309,7 +335,7 @@ def draw_background(mapa):
 
 
 def draw_info(SCREEN, text, pos, color=(0, 0, 0), background=None):
-    myfont = pygame.font.Font(None, int(24 / SCALE))
+    myfont = pygame.font.Font(None, int(22 / SCALE))
     textsurface = myfont.render(text, True, color, background)
 
     x, y = pos
@@ -325,7 +351,7 @@ def draw_info(SCREEN, text, pos, color=(0, 0, 0), background=None):
         erase.fill(COLORS["grey"])
 
     SCREEN.blit(textsurface, pos)
-
+    return textsurface.get_width(), textsurface.get_height()
 
 async def main_loop(q):
     while True:
@@ -355,10 +381,10 @@ async def main_game():
     SCREEN.blit(BACKGROUND, (0, 0))
     main_group.add(BomberMan(pos=mapa.bomberman_spawn))
 
-    state = {"score": 0, "player": "player1", "bomberman": (1, 1), "lives": 0}
+    state = {"score": 0, "player": "player1", "bomberman": (1, 1)}
 
     while True:
-#        SCREEN.blit(BACKGROUND, (0, 0))
+        SCREEN.blit(BACKGROUND, (0, 0))
         pygame.event.pump()
         if pygame.key.get_pressed()[pygame.K_ESCAPE]:
             asyncio.get_event_loop().stop()
@@ -368,17 +394,20 @@ async def main_game():
         enemies_group.clear(SCREEN, clear_callback)
 
         if "score" in state and "player" in state:
-            draw_info(SCREEN, "Score: ", (1, 0),)
             text = str(state["score"])
-            draw_info(SCREEN, text.zfill(6), (54, 0), color=(200, 0, 0))
-            
-            draw_info(SCREEN, "Lives: ", (125, 0))
-            text = str(state["lives"]).rjust(10)
-            draw_info(SCREEN, text, (145, 0), color=(200, 0, 0))
+            draw_info(SCREEN, text.zfill(6), (5, 1))
+            text = str(state["player"]).rjust(32)
+            draw_info(SCREEN, text, (4000, 1))
 
-            draw_info(SCREEN, "Player: ", (696, 0))
-            text = str(state["player"]).rjust(12)
-            draw_info(SCREEN, text, (735, -1), color=(0, 25, 200))
+        if "lives" in state and "level" in state:
+            w,h = draw_info(SCREEN, "lives: ", (SCREEN.get_width()/4,1))
+            draw_info(SCREEN, f"{state['lives']}", (SCREEN.get_width()/4 + w ,1),color=(255, 0, 0))
+            w,h = draw_info(SCREEN, "level: ", (2*SCREEN.get_width()/4 ,1))        
+            draw_info(SCREEN, f"{state['level']}", (2*SCREEN.get_width()/4 + w,1),color=(255, 0, 0))
+        
+        if "step" in state:
+            w,h = draw_info(SCREEN, "steps: ", (3*SCREEN.get_width()/4,1))
+            draw_info(SCREEN, f"{state['step']}", (3*SCREEN.get_width()/4 + w ,1),color=(255, 0, 0))               
 
         if "bombs" in state:
             for bomb in bombs_group:
@@ -387,6 +416,8 @@ async def main_game():
             if len(bombs_group.sprites()) < len(state["bombs"]):
                 pos, timeout, radius = state["bombs"][-1]
                 bombs_group.add(Bomb(pos=pos, timeout=timeout, radius=radius))
+            if len(bombs_group.sprites()) > len(state["bombs"]):
+                bombs_group.empty()
             bombs_group.update(state["bombs"])
 
         if "enemies" in state:
@@ -441,6 +472,7 @@ async def main_game():
             if (f"<{state['player']}>", state["score"]) not in highscores:
                 highscores.append((f"<{state['player']}>", state["score"]))
             highscores = sorted(highscores, key=lambda s: s[1], reverse=True)[:-1]
+            highscores = highscores[:len(RANKS)]
 
             HIGHSCORES = pygame.Surface(scale((20, 16)))
             HIGHSCORES.fill(COLORS["grey"])
