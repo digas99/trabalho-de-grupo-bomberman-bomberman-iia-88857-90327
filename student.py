@@ -73,9 +73,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 bomberman = state['bomberman']
                 powerup = state["powerups"]
-                
-                print("POWERUPS:")
-                print(powerup)
 
                 enemies = state['enemies']
 
@@ -122,21 +119,16 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                             powerup_pickedup[p[1]] = powerup_coords["pickedup"]
 
                 # if has discovered the exit, then go for it
-                if (len(state["exit"]) > 0 and len(enemies) == 0 and powerup_pickedup["Flames"]):
-                    print("EXIT")
-                    print(state["exit"])
-                    destiny = state["exit"]
+                # if (len(state["exit"]) > 0 and len(enemies) == 0 and powerup_pickedup["Flames"]):
+                #     destiny = state["exit"]
 
 
                 if (len(walls) == 0 and len(enem_bal) > 0):
                     destiny = [1,1]
                     if (bomberman == [1,1]):
                         corner_killing = True
-                
-                print("Corner Killing before tree search")
-                print(corner_killing)
+
                 if (not corner_killing):
-                    print("is going to tree search")
                     blocks = get_blocks(mapa, bomberman, destiny)
                     coordinates = get_coords(blocks)
                     conexions = get_conexions(blocks)
@@ -170,9 +162,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     next_block_strings_arr = next_block.split(",")
                     next_block_arr = [int(s) for s in next_block_strings_arr]
 
-
-                print("NEXT BLOCK")
-                print(next_block)
                 # CHECK FOR WALLS ON THE WAY
                 if (is_wall(walls, next_block_arr)):
                     oneal_within_range = False
@@ -187,12 +176,13 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         wall_spotted = False
                 
                 # CHECK IF BALLOOM IN WITHIN RANGE
-                # balloom_in_range = None
-                # for balloom in enem_bal_coords:
-                #     if (in_range(bomberman, balloom, 4)):
-                #         oneal_within_range = False
-                #         balloom_spotted = True
-                #         wall_spotted = False
+                balloom_in_range = None
+                for balloom in enem_bal_coords:
+                    if (in_range(bomberman, balloom, 2)):
+                        balloom_in_range = balloom
+                        balloom_spotted = True
+                        oneal_within_range = False
+                        wall_spotted = False
 
                 if (deployed_bomb_counter == 0):
                     key = get_key(bomberman_string, next_block)
@@ -242,22 +232,14 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     print("Key:")
                     print(key)
 
-                print("Array keys before POP")
-                print(array_keys)
-
                 if (corner_killing and len(array_keys) > 0):
                     key = array_keys.pop(0)
-                
-                print("LEN ENEM BAL")
-                print(len(enem_bal))
+
                 if (len(enem_bal) == 0):
                     corner_killing = False
                     if (key_none_resolving_flag):
                         key = ""
                         key_none_resolving_flag = False
-
-                print("Array keys after POP")
-                print(array_keys)
 
                 print("Key:")
                 print(key)
@@ -314,11 +296,59 @@ def get_key(current_block, next_block):
     if (c_block_coords[1] > n_block_coords[1]):
         return "w"
 
-def away_from_wall(bomberman, wall):
+def away_from_wall(bomberman, wall, walls):
     print("Bomberman in away_from_wall")
     print(bomberman)
     print("Wall in away_from_wall")
     print(wall)
+
+    pos_left_bomberman = [bomberman[0]-1, bomberman[1]]
+    pos_right_bomberman = [bomberman[0]+1, bomberman[1]]
+    pos_top_bomberman = [bomberman[0], bomberman[1]+1]
+    pos_bottom_bomberman = [bomberman[0], bomberman[1]-1]
+    keys1 = ["a", "d"]
+    keys2 = ["w", "s"]
+
+    # se o bomberman estiver no topo do mapa
+    if (bomberman[1] == 1):
+        if (wall[1] == 2):
+            if (is_wall(walls, pos_left_bomberman)):
+                return "d"
+            elif (is_wall(walls, pos_right_bomberman)):
+                return "a"
+            else:
+                return keys1[random.randint(0,1)]
+
+    # se o bomberman estiver no bottom do mapa
+    if (bomberman[1] == 29):
+        if (wall[1] == 28):
+            if (is_wall(walls, pos_left_bomberman)):
+                return "d"
+            elif (is_wall(walls, pos_right_bomberman)):
+                return "a"
+            else:
+                return keys1[random.randint(0,1)]
+
+    # se o bomberman estiver no canto esquerdo do mapa
+    if (bomberman[0] == 1):
+        if (wall[0] == 2):
+            if (is_wall(walls, pos_top_bomberman)):
+                return "s"
+            elif (is_wall(walls, pos_bottom_bomberman)):
+                return "w"
+            else:
+                return keys2[random.randint(0,1)]
+
+    # se o bomberman estiver no canto direito do mapa
+    if (bomberman[0] == 49):
+        if (wall[0] == 48):
+            if (is_wall(walls, pos_top_bomberman)):
+                return "s"
+            elif (is_wall(walls, pos_bottom_bomberman)):
+                return "w"
+            else:
+                return keys2[random.randint(0,1)]
+
     if (bomberman[0] < wall[0]):
         return "a"
 
@@ -336,13 +366,14 @@ def change_key_randomly(key, bomberman, destiny, walls, counter):
     print(bomberman)
     print("Destiny in rand_key:")
     print(destiny)
-    # se o bomberman estiver no canto superior do mapa
+
+    # se o bomberman estiver no topo do mapa
     if (bomberman[1] == 1):
         # tem uma wall na mesma linha
         if (bomberman[1] == destiny[1] or counter == 4):
             return "s"
 
-    # se o bomberman estiver no canto inferior do mapa
+    # se o bomberman estiver no bottom do mapa
     if (bomberman[1] == 29):
         if (bomberman[1] == destiny[1] or counter == 4):
             return "w"
@@ -356,9 +387,7 @@ def change_key_randomly(key, bomberman, destiny, walls, counter):
     if (bomberman[0] == 49):
         if (bomberman[0] == destiny[0] or counter == 4):
             return "a"
-    
-    print("Key:")
-    print(key)
+
     print("Oppos_key: ")
     oppos_key = opposite_key(key)
     print(oppos_key)
@@ -472,15 +501,15 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, desti
             # check if bomberman is between walls
             fakeWall = is_between_walls(walls, bomberman)
             if (fakeWall == None):
-                key = away_from_wall(bomberman, destiny)
+                key = away_from_wall(bomberman, destiny, walls)
             else:
                 # faz um away_from_wall personalizado
                 print("Size of fakeWall array")
                 print(fakeWall)
                 if (len(fakeWall) == 1):
-                    key = away_from_wall(bomberman, fakeWall[0])
+                    key = away_from_wall(bomberman, fakeWall[0], walls)
                 else:
-                    key = away_from_wall(bomberman, fakeWall[random.randint(0,1)])
+                    key = away_from_wall(bomberman, fakeWall[random.randint(0,1)], walls)
         deployed_bomb_counter += 1
 
     if (deployed_bomb_counter > 1):
