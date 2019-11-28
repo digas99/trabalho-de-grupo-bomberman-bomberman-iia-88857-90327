@@ -29,6 +29,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         mapa = Map(size=game_properties["size"], mapa=game_properties["map"])
         
         last_key = ""
+        last_key_not_B = ""
         deployed_bomb_counter = 0
         destroyed_walls = []
         has_deployed = False
@@ -159,7 +160,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         print("Path: ")
                         print(result)
 
-                        if (result != None and len(result[0])>12):
+                        if (result != None and len(result[0])>10):
                                 new_destiny = coords_to_int(string_to_arr(center_of_path(result[0], "floor")))
                                 print("NEW DESTINY if result > 15")
                                 print(new_destiny)
@@ -225,12 +226,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     if (current_state == 0):
                         print("DEPLOYING OVER ONEAL")
                         print(destiny)
-                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
                     elif (current_state == 1):
                         print("DEPLOYING OVER BALLOOM")
                         print(balloom_in_range)
                         if (balloom_in_range != None):
-                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, balloom_in_range, walls, key, after_deploy, powerup_pickedup)
+                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, balloom_in_range, walls, key, after_deploy, powerup_pickedup)
                         else:
                             # balloom_in_range = False
                             # wall_spotted = True
@@ -238,15 +239,20 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     elif (current_state == 2):
                         print("DEPLOYING OVER WALL")
                         print(destiny_wall)
-                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny_wall, walls, key, after_deploy, powerup_pickedup)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny_wall, walls, key, after_deploy, powerup_pickedup)
 
                     key = values["key"]
                     deployed_bomb_counter = values["dbc"]
                     after_deploy = values["ad"]
 
+                    print("LAST KEY")
+                    print(last_key)
+                    print("last_key_not_B")
+                    print(last_key_not_B)
+
                     last_key = key
-                    print("Key:")
-                    print(key)
+                    if (key != "B" and key != ""):
+                        last_key_not_B = key
 
                 if (corner_killing and len(array_keys) > 0):
                     key = array_keys.pop(0)
@@ -312,16 +318,16 @@ def get_key(current_block, next_block):
     if (c_block_coords[1] > n_block_coords[1]):
         return "w"
 
-def away_from_wall(bomberman, wall, walls):
+def away_from_wall(bomberman, wall, walls, last_key_not_B):
     print("Bomberman in away_from_wall")
     print(bomberman)
     print("Wall in away_from_wall")
     print(wall)
 
-    pos_left_bomberman = [bomberman[0]-1, bomberman[1]]
-    pos_right_bomberman = [bomberman[0]+1, bomberman[1]]
-    pos_top_bomberman = [bomberman[0], bomberman[1]+1]
-    pos_bottom_bomberman = [bomberman[0], bomberman[1]-1]
+    pos_left_bomberman = get_pos_from_entity(bomberman,"left",1)
+    pos_right_bomberman = get_pos_from_entity(bomberman,"right",1)
+    pos_top_bomberman = get_pos_from_entity(bomberman,"top",1)
+    pos_bottom_bomberman = get_pos_from_entity(bomberman,"bottom",1)
     keys1 = ["a", "d"]
     keys2 = ["w", "s"]
 
@@ -364,6 +370,14 @@ def away_from_wall(bomberman, wall, walls):
                 return "w"
             else:
                 return keys2[random.randint(0,1)]
+
+    # if there is a wall two blocks away from bomberman, then just go back
+    if ((is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"left",2), "horizontal") and is_wall(walls, pos_right_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"top",2), "vertical") and is_wall(walls, pos_bottom_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"right",2), "horizontal") and is_wall(walls, pos_left_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"bottom",2), "vertical") and is_wall(walls, pos_top_bomberman))):
+        print("HAS WALL TWO POSITIONS AWAY FROM BOMBERMAN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("last_key_not_B inside function")
+        print(last_key_not_B)
+        # it has to be the last_key_not_B, because the last_key will be always "B" in this situations
+        return opposite_key(last_key_not_B)
 
     if (bomberman[0] < wall[0]):
         return "a"
@@ -473,7 +487,7 @@ def in_range(entity1, entity2, range_val):
         return True
     return False
 
-def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, destiny, walls, key, after_deploy, pickedup):
+def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, pickedup):
     after_deploy = True
     # let bomberman be in the same position for some frames, to be protected form bomb
     if(pickedup["Flames"]): 
@@ -485,6 +499,12 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, desti
             after_deploy = False
             deployed_bomb_counter = 0
 
+    # ACTIVATE DETONATOR
+    # if bomberman has DETONATOR and he is still (meaning he is waiting for the bomb to explode, away from its range)
+    if (pickedup["Detonator"] and last_key == ""):
+        after_deploy = False
+        return "A"
+    
     # run from bomb
     print("DEPLOYED BOMB COUNTER INSIDE DEPLOY BOMB")
     print(deployed_bomb_counter)
@@ -494,15 +514,15 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, desti
             # check if bomberman is between walls
             fakeWall = is_between_walls(walls, bomberman)
             if (fakeWall == None):
-                key = away_from_wall(bomberman, destiny, walls)
+                key = away_from_wall(bomberman, destiny, walls, last_key_not_B)
             else:
                 # faz um away_from_wall personalizado
                 print("Size of fakeWall array")
                 print(fakeWall)
                 if (len(fakeWall) == 1):
-                    key = away_from_wall(bomberman, fakeWall[0], walls)
+                    key = away_from_wall(bomberman, fakeWall[0], walls, last_key_not_B)
                 else:
-                    key = away_from_wall(bomberman, fakeWall[random.randint(0,1)], walls)
+                    key = away_from_wall(bomberman, fakeWall[random.randint(0,1)], walls, last_key_not_B)
         deployed_bomb_counter += 1
 
     if (deployed_bomb_counter > 1):
@@ -596,6 +616,41 @@ def center_of_path(path, rounding):
         return path[math.floor(len(path)/2)]
     else:
         return None
+
+def get_pos_from_entity(entity, side, range_val):
+    if (side == "left"):
+        return [entity[0]-range_val, entity[1]]
+    elif(side == "right"):
+        return [entity[0]+range_val, entity[1]]
+    elif(side == "top"):
+        return [entity[0], entity[1]-range_val]
+    elif(side == "bottom"):
+        return [entity[0], entity[1]+range_val]
+    else:
+        return None
+
+def is_wall_in_line_of_3(walls, coords, direction):
+    if (is_wall(walls, coords)):
+        return True
+    
+    # if the line to be checked is horizontal
+    if (direction == "horizontal"):
+        # check the left position of the line of three
+        if(is_wall(walls,get_pos_from_entity(coords, "left", 1))):
+            return True
+
+        # check the right position of the line of three
+        if(is_wall(walls,get_pos_from_entity(coords, "right", 1))):
+            return True
+    
+    # same as above, but with different directions
+    if (direction == "vertical"):
+        if(is_wall(walls,get_pos_from_entity(coords, "top", 1))):
+            return True
+        if(is_wall(walls,get_pos_from_entity(coords, "bottom", 1))):
+            return True
+    
+    return False
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
