@@ -119,8 +119,9 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                             powerup_pickedup[p[1]] = powerup_coords["pickedup"]
 
                 # if has discovered the exit, then go for it
-                # if (len(state["exit"]) > 0 and len(enemies) == 0 and powerup_pickedup["Flames"]):
-                #     destiny = state["exit"]
+                # REMOVE LEN(WALLS), IT IS JUST FOR TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                if (len(state["exit"]) > 0 and len(enemies) == 0 and powerup_pickedup["Flames"] and len(walls) == 0):
+                    destiny = state["exit"]
 
 
                 if (len(walls) == 0 and len(enem_bal) > 0):
@@ -129,26 +130,41 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         corner_killing = True
 
                 if (not corner_killing):
-                    blocks = get_blocks(mapa, bomberman, destiny)
-                    coordinates = get_coords(blocks)
-                    conexions = get_conexions(blocks)
 
-                    connections = Connections(conexions, coordinates)
+                    # change the bomberman's destiny if the path is greater than 20 
+                    new_destiny = None
+                    while True:
+                        # if there is a new destiny
+                        print("NEW DESTINY")
+                        print(new_destiny) 
+                        if (new_destiny != None):
+                            destiny = new_destiny
+                        
+                        blocks = get_blocks(mapa, bomberman, destiny)
+                        coordinates = get_coords(blocks)
+                        conexions = get_conexions(blocks)
 
-                    p = SearchProblem(connections, bomberman_string, to_string(destiny))
-                    if (current_level == 1):
-                        t = SearchTree(p,'a*')
-                    else:
-                        t = SearchTree(p,'greedy')
+                        connections = Connections(conexions, coordinates)
 
-                    result = t.search(90)
+                        p = SearchProblem(connections, bomberman_string, to_string(destiny))
+                        if (current_level == 1):
+                            t = SearchTree(p,'a*')
+                        else:
+                            t = SearchTree(p,'greedy')
 
-                    print("")
-                    print ("Bomberman: ")
-                    print (bomberman)
+                        result = t.search(90)
 
-                    print("Path: ")
-                    print(result)            
+                        print ("Bomberman: ")
+                        print (bomberman)
+                        print("Path: ")
+                        print(result)
+
+                        if (result != None and len(result[0])>12):
+                                new_destiny = coords_to_int(string_to_arr(center_of_path(result[0], "floor")))
+                                print("NEW DESTINY if result > 15")
+                                print(new_destiny)
+                        else:
+                            break            
 
                     # para quando fica sem path
                     if(result == None):
@@ -433,31 +449,8 @@ def is_between_stones(mapa, coords):
 def coords_to_int(coords):
     return [int(coords[0]), int(coords[1])]
 
-def path_to_array_keys(path):
-
-    array_keys = []
-
-    for i in range(1, len(path)):
-
-        c_block_coords = path[i-1].split(",")
-        n_block_coords = path[i].split(",")
-        c_block_coords = coords_to_int(c_block_coords)
-        n_block_coords = coords_to_int(n_block_coords)
-
-        # se o x atual for menor que o próximo x
-        if (c_block_coords[0] < n_block_coords[0]):
-            array_keys.append("d")
-        
-        if (c_block_coords[0] > n_block_coords[0]):
-            array_keys.append("a")
-        
-        if (c_block_coords[1] < n_block_coords[1]):
-            array_keys.append("s")
-        
-        if (c_block_coords[1] > n_block_coords[1]):
-            array_keys.append("w")
-
-    return array_keys
+def string_to_arr(s):
+    return [c for c in s.split(",")]
 
 def opposite_key(key):
     if (key == "a"):
@@ -518,7 +511,10 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, mapa, bomberman, desti
             if (deployed_bomb_counter == 2):
                 key = last_key
             elif (deployed_bomb_counter == 3):
-                key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
+                if (is_wall(walls, destiny)):
+                    key = last_key
+                else:
+                    key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
             else:
                 key = ""
         else:
@@ -588,6 +584,18 @@ def get_powerup_coords(array, name, discovered, pickedup):
         next_block = entityCoords(array, name)
 
     return {"next_block":next_block, "discovered":discovered, "pickedup":pickedup}
+
+def center_of_path(path, rounding):
+    if (rounding == "ceil"):
+        return path[math.ceil(len(path)/2)]
+    elif (rounding == "floor"):
+        print("Inside center of path")
+        print(path)
+        print(len(path))
+        print(path[math.floor(len(path)/2)])
+        return path[math.floor(len(path)/2)]
+    else:
+        return None
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
