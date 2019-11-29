@@ -423,29 +423,33 @@ def change_key_randomly(key, bomberman, destiny, walls, counter):
     print(oppos_key)
     diff_keys = [k for k in "wasd" if (k != key and k != oppos_key)]
 
-    future_coords = {}
-    # get destiny coords from diff_keys
-    for d in diff_keys:
-        if (d == "w"):
-            future_coords['w'] = [bomberman[0], bomberman[1]-1]
+    # future_coords = {}
+    # # get destiny coords from diff_keys
+    # for d in diff_keys:
+    #     if (d == "w"):
+    #         future_coords['w'] = [bomberman[0], bomberman[1]-1]
         
-        if (d == "a"):
-            future_coords['a'] = [bomberman[0]-1, bomberman[1]]
+    #     if (d == "a"):
+    #         future_coords['a'] = [bomberman[0]-1, bomberman[1]]
 
-        if (d == "s"):
-            future_coords['s'] = [bomberman[0], bomberman[1]+1]
+    #     if (d == "s"):
+    #         future_coords['s'] = [bomberman[0], bomberman[1]+1]
         
-        if (d == "d"):
-            future_coords['d'] = [bomberman[0]+1, bomberman[1]]
+    #     if (d == "d"):
+    #         future_coords['d'] = [bomberman[0]+1, bomberman[1]]
 
-    print("Future coords:")
-    print(future_coords)
-    for c in future_coords:
-        for w in walls:
-            # a próxima posição é uma wall
-            if (future_coords.get(c)[0] == w[0] and future_coords.get(c)[1] == w[1]):
-                print("returned after getting wall on future coord")
-                return opposite_key(c)
+    # print("Future coords:")
+    # print(future_coords)
+    # for c in future_coords:
+    #     for w in walls:
+    #         # a próxima posição é uma wall
+    #         if (future_coords.get(c)[0] == w[0] and future_coords.get(c)[1] == w[1]):
+    #             print("returned after getting wall on future coord")
+    #             return opposite_key(c)
+
+    for i in range(len(diff_keys)):
+        if (is_wall(walls, next_pos_prefict(diff_keys[i], bomberman))):
+            diff_keys.pop(i)
 
     print("Diff Keys")
     print(diff_keys)
@@ -651,6 +655,18 @@ def is_wall_in_line_of_3(walls, coords, direction):
             return True
     
     return False
+
+def next_pos_prefict(key, entity):
+    if (key == "a"):
+        return [entity[0]-1, entity[1]]
+    elif (key == "w"):
+        return [entity[0], entity[1]-1]
+    elif (key == "d"):
+        return [entity[0]+1, entity[1]]
+    elif (key == "s"):
+        return [entity[0], entity[1]+1]
+    else:
+        return None
 
 # DO NOT CHANGE THE LINES BELLOW
 # You can change the default values using the command line, example:
