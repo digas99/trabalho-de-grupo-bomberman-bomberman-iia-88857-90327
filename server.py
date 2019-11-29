@@ -6,6 +6,7 @@ import logging
 import websockets
 import pickle
 import os.path
+import random
 from collections import namedtuple
 from game import Game
 
@@ -31,7 +32,6 @@ class Game_server:
         self.viewers = set()
         self.current_player = None
         self.grading = grading
-        self.game_info = "{}"
 
         self._highscores = []
         if os.path.isfile(HIGHSCORE_FILE):
@@ -41,7 +41,7 @@ class Game_server:
     def save_highscores(self):
         # update highscores
         logger.debug("Save highscores")
-        logger.info("FINAL SCORE <%s>: %s", self.current_player.name, self.game.score)
+        logger.info("FINAL SCORE <%s>: %s with %s steps", self.current_player.name, self.game.score, self.game.total_steps)
 
         self._highscores.append((self.current_player.name, self.game.score))
         self._highscores = sorted(self._highscores, key=lambda s: -1 * s[1])[
@@ -56,15 +56,12 @@ class Game_server:
             async for message in websocket:
                 data = json.loads(message)
                 if data["cmd"] == "join":
-                    self.game_info = self.game.info()
-                    self.game_info["highscores"] = self._highscores
-                    await websocket.send(json.dumps(self.game_info))
-
                     if path == "/player":
                         logger.info("<%s> has joined", data["name"])
                         await self.players.put(Player(data["name"], websocket))
 
                     if path == "/viewer":
+                        logger.info("Viewer connected")
                         self.viewers.add(websocket)
                         if self.game.running:
                             game_info = self.game.info()
@@ -95,13 +92,19 @@ class Game_server:
             try:
                 logger.info(f"Starting game for <{self.current_player.name}>")
                 self.game.start(self.current_player.name)
+                
+                #Send game info to viewer and player
+                game_info = self.game.info()
+                game_info["highscores"] = self._highscores
                 if self.viewers:
                     await asyncio.wait(
                         [
-                            client.send(json.dumps(self.game_info))
+                            client.send(json.dumps(game_info))
                             for client in self.viewers
                         ]
                     )
+                await self.current_player.ws.send(json.dumps(game_info))
+
 
                 if self.grading:
                     game_rec = dict()
@@ -126,6 +129,7 @@ class Game_server:
                 try:
                     if self.grading:
                         game_rec["score"] = self.game.score
+                        game_rec["total_steps"] = self.game.total_steps
                         game_rec["level"] = self.game.map.level
                         requests.post(self.grading, json=game_rec)
                 except:
@@ -141,20 +145,25 @@ if __name__ == "__main__":
     parser.add_argument("--port", help="TCP port", type=int, default=8000)
     parser.add_argument("--level", help="start on level", type=int, default=1)
     parser.add_argument("--lives", help="Number of lives", type=int, default=3)
+    parser.add_argument("--seed", help="Seed number", type=int, default=0)
     parser.add_argument(
         "--timeout", help="Timeout after this amount of steps", type=int, default=3000
     )
     parser.add_argument(
         "--grading-server",
         help="url of grading server",
-        default="http://bomberman-aulas.5g.cn.atnog.av.it.pt/game",
+        default="http://bomberman-aulas.ws.atnog.av.it.pt/game",
     )
     args = parser.parse_args()
+
+    if args.seed > 0:
+        random.seed(args.seed)
 
     g = Game_server(args.level, args.lives, args.timeout, args.grading_server)
 
     game_loop_task = asyncio.ensure_future(g.mainloop())
 
+    logger.info(f"Listenning @ {args.bind}:{args.port}")
     websocket_server = websockets.serve(g.incomming_handler, args.bind, args.port)
 
     loop = asyncio.get_event_loop()
