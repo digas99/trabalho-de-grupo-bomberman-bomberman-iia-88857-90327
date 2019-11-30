@@ -201,12 +201,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     balloom_in_range = closest_entity(bomberman, enem_bal_coords)
 
                     if powerup_pickedup["Flames"]:
-                        if same_line(bomberman, balloom_in_range) and (distance_to(bomberman, balloom_in_range) < 2):
+                        if same_line(bomberman, balloom_in_range) and (distance_to(bomberman, balloom_in_range) < 3):
                             oneal_within_range = False
                             balloom_spotted = True
                             wall_spotted = False
                     elif not powerup_pickedup["Flames"]:
-                        if same_line(bomberman, balloom_in_range) and (distance_to(bomberman, balloom_in_range) < 1):
+                        if same_line(bomberman, balloom_in_range) and (distance_to(bomberman, balloom_in_range) < 2):
                             oneal_within_range = False
                             balloom_spotted = True
                             wall_spotted = False
@@ -246,14 +246,26 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                            # balloom_in_range = False
                            # wall_spotted = True
                            current_state = 2
-                    elif (current_state == 2):
-                        print("DEPLOYING OVER WALL")
-                        print(destiny_wall)
-                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny_wall, walls, key, after_deploy, powerup_pickedup)
 
-                    key = values["key"]
-                    deployed_bomb_counter = values["dbc"]
-                    after_deploy = values["ad"]
+                    elif (current_state == 2):
+                        print("STATE == 2")
+                        if balloom_in_radius(bomberman, enem_bal_coords, 3) and not after_deploy:
+                            print("NOT DEPLOYING, WAITING FOR BALLOOM TO GO AWAY")
+                            key = ""
+
+                        elif not balloom_in_radius:
+                            print("DEPLOYING OVER WALL")
+                            print(destiny_wall)
+                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny_wall, walls, key, after_deploy, powerup_pickedup)
+                            print("VALUE INSIDE")
+                            print(values)
+                            
+                    print("VALUE OUTSIDE")
+                    print(values)
+                    if len(values) != 0:
+                        key = values["key"]
+                        deployed_bomb_counter = values["dbc"]
+                        after_deploy = values["ad"]
 
                     print("LAST KEY")
                     print(last_key)
@@ -671,6 +683,16 @@ def is_wall_in_line_of_3(walls, coords, direction):
 def same_line(entity1, entity2): 
     if entity1[0] == entity2[0] or entity1[1] == entity2[1]:
         return True
+    return False
+
+#check if balloom is in radius
+def balloom_in_radius(bomberman, enem_coords, range): #bomberman, enem_bal_coords
+
+    for balloom in enem_coords:
+
+        if distance_to(bomberman, balloom) < range:
+            return True 
+
     return False
 
 #check the distance from closest balloom to bomberman
