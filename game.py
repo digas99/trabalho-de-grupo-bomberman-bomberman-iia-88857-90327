@@ -16,17 +16,17 @@ logger.setLevel(logging.DEBUG)
 LIVES = 3
 INITIAL_SCORE = 0
 TIMEOUT = 3000
-GAME_SPEED = 10
+GAME_SPEED = 20
 MIN_BOMB_RADIUS = 3
 MAP_SIZE = (51, 31)
 
 LEVEL_ENEMIES = {
-    1: [Balloom] * 6,
-    2: [Balloom] * 3 + [Oneal] * 3,
-    3: [Balloom] * 2 + [Oneal] * 2 + [Doll] * 2,
-    4: [Balloom] + [Oneal] + [Doll] * 2 + [Minvo] * 2,
-    5: [Oneal] * 4 + [Doll] * 3,
-    6: [Oneal] * 2 + [Doll] * 3 + [Minvo] * 2,
+    1: [Balloom] * 0,
+    2: [Balloom] * 0,
+    3: [Balloom] * 0,
+    4: [Balloom] * 0,
+    5: [Balloom] * 0,
+    6: [Balloom] * 0,
     7: [Oneal] * 2 + [Doll] * 3 + [Kondoria] * 2,
     8: [Oneal] * 1 + [Doll] * 2 + [Minvo] * 4,
     9: [Oneal] * 1 + [Doll] * 1 + [Minvo] * 4 + [Kondoria] * 1,

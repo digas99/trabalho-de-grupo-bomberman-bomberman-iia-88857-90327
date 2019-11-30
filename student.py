@@ -372,10 +372,12 @@ def away_from_wall(bomberman, wall, walls, last_key_not_B):
                 return keys2[random.randint(0,1)]
 
     # if there is a wall two blocks away from bomberman, then just go back
-    if ((is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"left",2), "horizontal") and is_wall(walls, pos_right_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"top",2), "vertical") and is_wall(walls, pos_bottom_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"right",2), "horizontal") and is_wall(walls, pos_left_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"bottom",2), "vertical") and is_wall(walls, pos_top_bomberman))):
+    if ((is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"left",2), "vertical") and is_wall(walls, pos_right_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"top",2), "horizontal") and is_wall(walls, pos_bottom_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"right",2), "vertical") and is_wall(walls, pos_left_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"bottom",2), "horizontal") and is_wall(walls, pos_top_bomberman))):
         print("HAS WALL TWO POSITIONS AWAY FROM BOMBERMAN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         print("last_key_not_B inside function")
         print(last_key_not_B)
+        print("oposite")
+        print(opposite_key(last_key_not_B))
         # it has to be the last_key_not_B, because the last_key will be always "B" in this situations
         return opposite_key(last_key_not_B)
 
@@ -423,33 +425,33 @@ def change_key_randomly(key, bomberman, destiny, walls, counter):
     print(oppos_key)
     diff_keys = [k for k in "wasd" if (k != key and k != oppos_key)]
 
-    # future_coords = {}
-    # # get destiny coords from diff_keys
-    # for d in diff_keys:
-    #     if (d == "w"):
-    #         future_coords['w'] = [bomberman[0], bomberman[1]-1]
+    future_coords = {}
+    # get destiny coords from diff_keys
+    for d in diff_keys:
+        if (d == "w"):
+            future_coords['w'] = [bomberman[0], bomberman[1]-1]
         
-    #     if (d == "a"):
-    #         future_coords['a'] = [bomberman[0]-1, bomberman[1]]
+        if (d == "a"):
+            future_coords['a'] = [bomberman[0]-1, bomberman[1]]
 
-    #     if (d == "s"):
-    #         future_coords['s'] = [bomberman[0], bomberman[1]+1]
+        if (d == "s"):
+            future_coords['s'] = [bomberman[0], bomberman[1]+1]
         
-    #     if (d == "d"):
-    #         future_coords['d'] = [bomberman[0]+1, bomberman[1]]
+        if (d == "d"):
+            future_coords['d'] = [bomberman[0]+1, bomberman[1]]
 
-    # print("Future coords:")
-    # print(future_coords)
-    # for c in future_coords:
-    #     for w in walls:
-    #         # a próxima posição é uma wall
-    #         if (future_coords.get(c)[0] == w[0] and future_coords.get(c)[1] == w[1]):
-    #             print("returned after getting wall on future coord")
-    #             return opposite_key(c)
+    print("Future coords:")
+    print(future_coords)
+    for c in future_coords:
+        for w in walls:
+            # a próxima posição é uma wall
+            if (future_coords.get(c)[0] == w[0] and future_coords.get(c)[1] == w[1]):
+                print("returned after getting wall on future coord")
+                return opposite_key(c)
 
-    for i in range(len(diff_keys)):
-        if (is_wall(walls, next_pos_prefict(diff_keys[i], bomberman))):
-            diff_keys.pop(i)
+    # for i in range(len(diff_keys)):
+    #     if (is_wall(walls, next_pos_prefict(diff_keys[i], bomberman))):
+    #         diff_keys.pop(i)
 
     print("Diff Keys")
     print(diff_keys)
