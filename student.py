@@ -50,6 +50,9 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         current_state = -1
         corner_killing = False
         key_none_resolving_flag = True
+        count = 0
+        bomberman = []
+        previous_bomberman_pos = []
 
         while True:
             try:
@@ -69,13 +72,29 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 balloom_spotted = False
                 oneal_within_range = False
 
+                
+                bomberman = state['bomberman']
+
+                #Check if bomberman is stuck sporting
+                if(bomberman == previous_bomberman_pos):    
+                    count = count + 1
+
+                if (count > 50):
+                    print("IS STUCK")
+                    if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
+                        print("IS STUCK EIXO Y")
+                        key = "a"
+                    elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
+                        print("IS STUCK EIXO X")
+                        key = "w"       
+
                 current_level = state['level']
 
-                bomberman = state['bomberman']
                 powerup = state["powerups"]
 
                 enemies = state['enemies']
 
+                previous_bomberman_pos = bomberman
 
                 # fetching only Oneals
                 enem_oneal = [enemy for enemy in enemies if enemy['name'] == "Oneal"]
@@ -93,8 +112,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 # if there are destroyed walls, then don't add them to the walls we want
                 walls = state['walls']
                 bomberman_string = to_string(bomberman)
-                
 
+            
                 if(len(walls) != 0):
                     if (not after_deploy):
                         destiny_wall = closest_entity(bomberman, walls)
@@ -124,7 +143,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 # REMOVE LEN(WALLS), IT IS JUST FOR TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if (len(state["exit"]) > 0 and len(enemies) == 0 and powerup_pickedup["Flames"] and len(walls) == 0):
                     destiny = state["exit"]
-
 
 
                 if (len(walls) == 0 and len(enem_bal) > 0):
@@ -194,22 +212,24 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         balloom_spotted = False
                         wall_spotted = False
                 
-                # CHECK IF BALLOOM IN WITHIN RANGE sporting
+                # CHECK IF BALLOOM IN WITHIN RANGE 
                 balloom_in_range = None
 
                 if enem_bal != []:
                     balloom_in_range = closest_entity(bomberman, enem_bal_coords)
 
                     if powerup_pickedup["Flames"]:
-                        if same_line(bomberman, balloom_in_range) and (distance_to(bomberman, balloom_in_range) < 3):
+                        if same_line(bomberman, balloom_in_range) and (distance_to(bomberman, balloom_in_range) < 5):
                             oneal_within_range = False
                             balloom_spotted = True
                             wall_spotted = False
                     elif not powerup_pickedup["Flames"]:
-                        if same_line(bomberman, balloom_in_range) and (distance_to(bomberman, balloom_in_range) < 2):
+                        if same_line(bomberman, balloom_in_range) and (distance_to(bomberman, balloom_in_range) < 4):
                             oneal_within_range = False
                             balloom_spotted = True
                             wall_spotted = False
+                
+                
 
                 if (deployed_bomb_counter == 0):
                     key = get_key(bomberman_string, next_block)
@@ -237,6 +257,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         print("DEPLOYING OVER ONEAL")
                         print(destiny)
                         values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
+                    
                     elif (current_state == 1):
                        print("DEPLOYING OVER BALLOOM")
                        print(balloom_in_range)
@@ -246,14 +267,14 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                            # balloom_in_range = False
                            # wall_spotted = True
                            current_state = 2
-
+                     
                     elif (current_state == 2):
                         print("STATE == 2")
                         if balloom_in_radius(bomberman, enem_bal_coords, 3) and not after_deploy:
                             print("NOT DEPLOYING, WAITING FOR BALLOOM TO GO AWAY")
                             key = ""
 
-                        elif not balloom_in_radius:
+                        elif not balloom_in_radius(bomberman, enem_bal_coords, 3):
                             print("DEPLOYING OVER WALL")
                             print(destiny_wall)
                             values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny_wall, walls, key, after_deploy, powerup_pickedup)
@@ -284,8 +305,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     if (key_none_resolving_flag):
                         key = ""
                         key_none_resolving_flag = False
-                
-                
 
                 print("Key:")
                 print(key)
@@ -694,6 +713,7 @@ def balloom_in_radius(bomberman, enem_coords, range): #bomberman, enem_bal_coord
             return True 
 
     return False
+
 
 #check the distance from closest balloom to bomberman
 #def distance_to_closest_balloom(bomberman, balloom_in_range, range_val):
