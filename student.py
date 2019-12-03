@@ -56,6 +56,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         closest_oneal = []
         previous_closest_oneal = [0,0]
         count_oneal_in_same_axis = 0
+        lives = 3
 
         while True:
             try:
@@ -71,6 +72,14 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         await websocket.recv()
                     )
 
+                curr_lives = state["lives"]
+
+                if lives > curr_lives:
+                    lives = curr_lives
+                    after_deploy = False
+
+
+
                 wall_spotted = False
                 balloom_spotted = False
                 oneal_within_range = False
@@ -82,6 +91,9 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 if(bomberman == previous_bomberman_pos):
                     print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
                     count = count + 1 
+                
+                print("COUNT")
+                print(count)
 
                 if (count > 50):
                     print("IS STUCK")
@@ -90,7 +102,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         key = "a"
                     elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
                         print("IS STUCK EIXO X")
-                        key = "w"       
+                        key = "w" 
+                    count = 0      
 
                 current_level = state['level']
 
@@ -121,15 +134,15 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
             
                 if(len(walls) != 0):
                     if (not after_deploy):
-                        destiny_wall = closest_entity(bomberman, walls)
+                        destiny = closest_entity(bomberman, walls)
                         # after_deploy = True
                     else: 
                         next_block = "1, 0"
 
-                if (len(enem_oneal) > 0):
+                if (len(enem_oneal) > 0 and len(walls) == 0):
                     #to avoid boomberman stuck due to oneal being stuck to sporting
                     closest_oneal = closest_entity(bomberman, enem_oneal_coords)
-                    print("CLOSESTE ONEAL")
+                    print("CLOSEST ONEAL")
                     print(closest_oneal)
 
                     if (closest_oneal[0] == previous_closest_oneal[0]) or (closest_oneal[1] == previous_closest_oneal[1]):
@@ -137,18 +150,16 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                         if count_oneal_in_same_axis > 50:
                             destiny = closest_entity(bomberman, walls)
+                            count_oneal_in_same_axis = 0
+
                         elif count_oneal_in_same_axis < 50:
                             destiny = closest_entity(bomberman, enem_oneal_coords)
+                            count_oneal_in_same_axis = 0
 
                     destiny = closest_entity(bomberman, enem_oneal_coords)
                 
                     previous_closest_oneal = closest_oneal
 
-                    
-
-                # se já não houverem mais oneals, foca nas walls   
-                else:
-                    destiny = destiny_wall
 
                 # if the array of powerups has some powerup in it
                 if (powerup != []):
@@ -175,39 +186,48 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 if (not corner_killing):
 
                     # change the bomberman's destiny if the path is greater than 20 
-                    new_destiny = None
-                    while True:
-                        # if there is a new destiny
-                        print("NEW DESTINY")
-                        print(new_destiny) 
-                        if (new_destiny != None):
-                            destiny = new_destiny
-                        
-                        blocks = get_blocks(mapa, bomberman, destiny)
-                        coordinates = get_coords(blocks)
-                        conexions = get_conexions(blocks)
+                    # new_destiny = None
+                    # while True:
+                    #     # if there is a new destiny
+                    #     print("NEW DESTINY")
+                    #     print(new_destiny) 
+                    #     if (new_destiny != None):
+                    #         destiny = new_destiny
 
-                        connections = Connections(conexions, coordinates)
+                    #para resolver o lag
+                    # if distance_to(bomberman, destiny) > 15:
+                    #     destiny = mid_range_point(bomberman, destiny)
+                    #     print("Destiny MID RANGE")
+                    #     print(destiny)
+                    
+                    print("DESTINY RIGHT BEFORE ENTERING BLOCKS")
+                    print(destiny)
+                    blocks = get_blocks(mapa, bomberman, destiny)
+                    coordinates = get_coords(blocks)
+                    conexions = get_conexions(blocks)
 
-                        p = SearchProblem(connections, bomberman_string, to_string(destiny))
-                        if (current_level == 1):
-                            t = SearchTree(p,'a*')
-                        else:
-                            t = SearchTree(p,'greedy')
+                    connections = Connections(conexions, coordinates)
 
-                        result = t.search(90)
+                    p = SearchProblem(connections, bomberman_string, to_string(destiny))
+                    
+                    if distance_to(bomberman, destiny) > 15:
+                        t = SearchTree(p,'greedy')
+                    else:
+                        t = SearchTree(p,'a*')
 
-                        print ("Bomberman: ")
-                        print (bomberman)
-                        print("Path: ")
-                        print(result)
+                    result = t.search(90)
 
-                        if (result != None and len(result[0])>10):
-                                new_destiny = coords_to_int(string_to_arr(center_of_path(result[0], "floor")))
-                                print("NEW DESTINY if result > 15")
-                                print(new_destiny)
-                        else:
-                            break            
+                    print ("Bomberman: ")
+                    print (bomberman)
+                    print("Path: ")
+                    print(result)
+
+                        # if (result != None and len(result[0])>10):
+                        #         new_destiny = coords_to_int(string_to_arr(center_of_path(result[0], "floor")))
+                        #         print("NEW DESTINY if result > 15")
+                        #         print(new_destiny)
+                        # else:
+                        #     break            
 
                     # para quando fica sem path
                     if(result == None):
@@ -302,7 +322,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         elif not balloom_in_radius(bomberman, enem_bal_coords, 3):
                             print("DEPLOYING OVER WALL")
                             print(destiny_wall)
-                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny_wall, walls, key, after_deploy, powerup_pickedup)
+                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
                             print("VALUE INSIDE")
                             print(values)
                             
@@ -328,6 +348,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 if (len(enem_bal) == 0):
                     corner_killing = False
                     if (key_none_resolving_flag):
+                        print("KEY NONE RESOLVING FLAG")
                         key = ""
                         key_none_resolving_flag = False
 
@@ -557,6 +578,7 @@ def in_range(entity1, entity2, range_val):
     if (abs(entity1[0] - entity2[0]) <= range_val and abs(entity1[1] - entity2[1]) <= range_val):
         return True
     return False
+9
 
 def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, pickedup):
     after_deploy = True
@@ -738,6 +760,9 @@ def balloom_in_radius(bomberman, enem_coords, range): #bomberman, enem_bal_coord
             return True 
 
     return False
+
+def mid_range_point(entity1, entity2):
+    return [math.ceil((entity1[0] + entity2[0])/2), math.ceil((entity1[1] + entity2[1])/2)]
 
 
 #check the distance from closest balloom to bomberman
