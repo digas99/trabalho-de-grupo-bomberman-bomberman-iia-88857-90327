@@ -57,6 +57,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         previous_closest_oneal = [0,0]
         count_oneal_in_same_axis = 0
         lives = 3
+        bomberman_first_position = [0,0]
 
         while True:
             try:
@@ -78,6 +79,10 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     lives = curr_lives
                     after_deploy = False
 
+                #save the position where bomberman started the game
+                if stepCount == 0:
+                    bomberman_first_position = state["bomberman"]
+
 
 
                 wall_spotted = False
@@ -85,33 +90,13 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 oneal_within_range = False
 
                 
-                bomberman = state['bomberman']
-
-                #Check if bomberman is stuck 
-                if(bomberman == previous_bomberman_pos):
-                    print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
-                    count = count + 1 
-                
-                print("COUNT")
-                print(count)
-
-                if (count > 50):
-                    print("IS STUCK")
-                    if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
-                        print("IS STUCK EIXO Y")
-                        key = "a"
-                    elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
-                        print("IS STUCK EIXO X")
-                        key = "w" 
-                    count = 0      
+                bomberman = state['bomberman']      
 
                 current_level = state['level']
 
                 powerup = state["powerups"]
 
                 enemies = state['enemies']
-
-                previous_bomberman_pos = bomberman
 
                 # fetching only Oneals
                 enem_oneal = [enemy for enemy in enemies if enemy['name'] == "Oneal"]
@@ -138,27 +123,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         # after_deploy = True
                     else: 
                         next_block = "1, 0"
-
-                if (len(enem_oneal) > 0 and len(walls) == 0):
-                    #to avoid boomberman stuck due to oneal being stuck to sporting
-                    closest_oneal = closest_entity(bomberman, enem_oneal_coords)
-                    print("CLOSEST ONEAL")
-                    print(closest_oneal)
-
-                    if (closest_oneal[0] == previous_closest_oneal[0]) or (closest_oneal[1] == previous_closest_oneal[1]):
-                        count_oneal_in_same_axis = count_oneal_in_same_axis + 1
-
-                        if count_oneal_in_same_axis > 50:
-                            destiny = closest_entity(bomberman, walls)
-                            count_oneal_in_same_axis = 0
-
-                        elif count_oneal_in_same_axis < 50:
-                            destiny = closest_entity(bomberman, enem_oneal_coords)
-                            count_oneal_in_same_axis = 0
-
-                    destiny = closest_entity(bomberman, enem_oneal_coords)
-                
-                    previous_closest_oneal = closest_oneal
 
 
                 # if the array of powerups has some powerup in it
@@ -247,7 +211,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     balloom_spotted = False
                     wall_spotted = True
 
-                # CHECK IF ONEAL IS WITHING RANGE sporting
+                # CHECK IF ONEAL IS WITHING RANGE 
 
                 for oneal in enem_oneal_coords:
                     if (in_range(bomberman, oneal, 2)):
@@ -255,7 +219,33 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         balloom_spotted = False
                         wall_spotted = False
 
+
+                if (len(enem_oneal) > 0 and len(walls) == 0):
+                    #to avoid boomberman stuck due to oneal being stuck to sporting
+                    closest_oneal = closest_entity(bomberman, enem_oneal_coords)
+                    print("CLOSEST ONEAL")
+                    print(closest_oneal)
+
+                    # if (closest_oneal[0] == previous_closest_oneal[0]) or (closest_oneal[1] == previous_closest_oneal[1]):
+                    #     count_oneal_in_same_axis = count_oneal_in_same_axis + 1
+                    #     print("COUNTER TO SAVE US FROM STUPID ONEAL")
+                    #     print(count_oneal_in_same_axis)
+
+                    #     if count_oneal_in_same_axis > 50:
+                    #         destiny = closest_entity(bomberman, walls)
+                    #         count_oneal_in_same_axis = 0
+
+                    #     elif count_oneal_in_same_axis < 50:
+                    #         destiny = closest_entity(bomberman, enem_oneal_coords)
+                    #         count_oneal_in_same_axis = 0
+
+
+                    destiny = closest_oneal
                 
+                    #previous_closest_oneal = closest_oneal
+
+                print("DESTINO ATUAL")
+                print(destiny)
                 
                 # CHECK IF BALLOOM IN WITHIN RANGE 
                 balloom_in_range = None
@@ -345,6 +335,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 if (corner_killing and len(array_keys) > 0):
                     key = array_keys.pop(0)
 
+
                 if (len(enem_bal) == 0):
                     corner_killing = False
                     if (key_none_resolving_flag):
@@ -358,7 +349,43 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print("POWERUP")
                 print(state["powerups"])
 
-                stepCount+= 1        
+
+                #Check if bomberman is stuck 
+                if(bomberman == previous_bomberman_pos):
+                    print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
+                    count = count + 1 
+                
+                print("COUNT")
+                print(count)
+
+                if (count > 50):
+                    print("IS STUCK")
+                    if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
+                        print("IS STUCK EIXO Y")
+                        key = "a"
+                    elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
+                        print("IS STUCK EIXO X")
+                        key = "w"
+                    else:
+                        key = "B"
+
+                    # elif sporting -> falta completar, perguntar ao diogo como funciona a key_randomly
+                    #     key = change_key_randomly() 
+                    count = 0 
+
+                if bomberman != previous_bomberman_pos:
+                    count = 0
+
+                previous_bomberman_pos = bomberman       
+
+                #if bomberman is stucked in the corner, after he dies
+                if bomberman == bomberman_first_position:
+                    print("STUCK IN CORNER")
+                    if count > 10:
+                        ("KEY=S")
+                        key = "s"
+
+                stepCount += 1
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
@@ -578,7 +605,7 @@ def in_range(entity1, entity2, range_val):
     if (abs(entity1[0] - entity2[0]) <= range_val and abs(entity1[1] - entity2[1]) <= range_val):
         return True
     return False
-9
+
 
 def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, pickedup):
     after_deploy = True
