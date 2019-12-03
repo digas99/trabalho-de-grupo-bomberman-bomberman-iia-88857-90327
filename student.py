@@ -53,6 +53,9 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         count = 0
         bomberman = []
         previous_bomberman_pos = []
+        closest_oneal = []
+        previous_closest_oneal = [0,0]
+        count_oneal_in_same_axis = 0
 
         while True:
             try:
@@ -75,9 +78,10 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 
                 bomberman = state['bomberman']
 
-                #Check if bomberman is stuck sporting
-                if(bomberman == previous_bomberman_pos):    
-                    count = count + 1
+                #Check if bomberman is stuck 
+                if(bomberman == previous_bomberman_pos):
+                    print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
+                    count = count + 1 
 
                 if (count > 50):
                     print("IS STUCK")
@@ -102,6 +106,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 if (enem_oneal != None):
                     enem_oneal_coords = [c['pos'] for c in enem_oneal]
 
+
                 enem_bal = [enemy for enemy in enemies if enemy['name'] == "Balloom"]
                 if (enem_bal != None):
                     enem_bal_coords = [c['pos'] for c in enem_bal]
@@ -122,7 +127,24 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         next_block = "1, 0"
 
                 if (len(enem_oneal) > 0):
+                    #to avoid boomberman stuck due to oneal being stuck to sporting
+                    closest_oneal = closest_entity(bomberman, enem_oneal_coords)
+                    print("CLOSESTE ONEAL")
+                    print(closest_oneal)
+
+                    if (closest_oneal[0] == previous_closest_oneal[0]) or (closest_oneal[1] == previous_closest_oneal[1]):
+                        count_oneal_in_same_axis = count_oneal_in_same_axis + 1
+
+                        if count_oneal_in_same_axis > 50:
+                            destiny = closest_entity(bomberman, walls)
+                        elif count_oneal_in_same_axis < 50:
+                            destiny = closest_entity(bomberman, enem_oneal_coords)
+
                     destiny = closest_entity(bomberman, enem_oneal_coords)
+                
+                    previous_closest_oneal = closest_oneal
+
+                    
 
                 # se já não houverem mais oneals, foca nas walls   
                 else:
@@ -205,12 +227,15 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     balloom_spotted = False
                     wall_spotted = True
 
-                # CHECK IF ONEAL IS WITHING RANGE
+                # CHECK IF ONEAL IS WITHING RANGE sporting
+
                 for oneal in enem_oneal_coords:
                     if (in_range(bomberman, oneal, 2)):
                         oneal_within_range = True
                         balloom_spotted = False
                         wall_spotted = False
+
+                
                 
                 # CHECK IF BALLOOM IN WITHIN RANGE 
                 balloom_in_range = None
