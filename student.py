@@ -51,6 +51,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         corner_killing = False
         key_none_resolving_flag = True
         count = 0
+        countStuckInCorner = 0
         bomberman = []
         previous_bomberman_pos = []
         closest_oneal = []
@@ -58,6 +59,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         count_oneal_in_same_axis = 0
         lives = 3
         bomberman_first_position = [0,0]
+        is_stuck_flag = False
 
         while True:
             try:
@@ -204,6 +206,37 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     
                     next_block_strings_arr = next_block.split(",")
                     next_block_arr = [int(s) for s in next_block_strings_arr]
+                
+                #Check if bomberman is stuck 
+                if(bomberman == previous_bomberman_pos):
+                    print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
+                    count = count + 1 
+                
+                print("COUNT")
+                print(count)
+
+                if (count > 50):
+                    print("IS STUCK")
+                    is_stuck_flag = True
+                    # if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
+                    #     print("IS STUCK EIXO Y")
+                    #     key = "a"
+                    # elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
+                    #     print("IS STUCK EIXO X")
+                    #     key = "w"
+                    # else :
+                    key = "B"
+                    after_deploy = True
+                    print("KEY = B AND AFTER DEPLOY = TRUE")
+                    print(key)
+                    print(after_deploy)
+                    count = 0
+                        
+
+                if bomberman != previous_bomberman_pos:
+                    count = 0
+
+                previous_bomberman_pos = bomberman 
 
                 # CHECK FOR WALLS ON THE WAY
                 if (is_wall(walls, next_block_arr)):
@@ -305,7 +338,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                      
                     elif (current_state == 2):
                         print("STATE == 2")
-                        if balloom_in_radius(bomberman, enem_bal_coords, 3) and not after_deploy:
+                        if balloom_in_radius(bomberman, enem_bal_coords, 3) and not after_deploy and not is_stuck_flag:
                             print("NOT DEPLOYING, WAITING FOR BALLOOM TO GO AWAY")
                             key = ""
 
@@ -347,43 +380,21 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print(key)
 
                 print("POWERUP")
-                print(state["powerups"])
-
-
-                #Check if bomberman is stuck 
-                if(bomberman == previous_bomberman_pos):
-                    print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
-                    count = count + 1 
-                
-                print("COUNT")
-                print(count)
-
-                if (count > 50):
-                    print("IS STUCK")
-                    if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
-                        print("IS STUCK EIXO Y")
-                        key = "a"
-                    elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
-                        print("IS STUCK EIXO X")
-                        key = "w"
-                    else:
-                        key = "B"
-
-                    # elif sporting -> falta completar, perguntar ao diogo como funciona a key_randomly
-                    #     key = change_key_randomly() 
-                    count = 0 
-
-                if bomberman != previous_bomberman_pos:
-                    count = 0
-
-                previous_bomberman_pos = bomberman       
+                print(state["powerups"])      
 
                 #if bomberman is stucked in the corner, after he dies
                 if bomberman == bomberman_first_position:
+                    countStuckInCorner = countStuckInCorner + 1
                     print("STUCK IN CORNER")
-                    if count > 10:
-                        ("KEY=S")
+                    if countStuckInCorner > 10:
+                        print("KEY=S")
                         key = "s"
+                
+                if bomberman != bomberman_first_position:
+                    countStuckInCorner = 0
+
+                print("Count STUCK IN CORNER")
+                print(countStuckInCorner)
 
                 stepCount += 1
 
