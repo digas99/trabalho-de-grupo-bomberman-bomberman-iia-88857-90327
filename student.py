@@ -205,6 +205,37 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     next_block_strings_arr = next_block.split(",")
                     next_block_arr = [int(s) for s in next_block_strings_arr]
 
+                 #Check if bomberman is stuck 
+                if(bomberman == previous_bomberman_pos):
+                    print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
+                    count = count + 1 
+                
+                print("COUNT")
+                print(count)
+
+                if (count > 50):
+                    print("IS STUCK")
+                    if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
+                        print("IS STUCK EIXO Y")
+                        print("KEY7")
+                        key = "a"
+                    elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
+                        print("IS STUCK EIXO X")
+                        print("KEY8")
+                        key = "w"
+                    else:
+                        print("KEY9")
+                        key = "B"
+
+                    # elif sporting -> falta completar, perguntar ao diogo como funciona a key_randomly
+                    #     key = change_key_randomly() 
+                    count = 0 
+
+                if bomberman != previous_bomberman_pos:
+                    count = 0
+
+                previous_bomberman_pos = bomberman 
+
                 # CHECK FOR WALLS ON THE WAY
                 if (is_wall(walls, next_block_arr)):
                     oneal_within_range = False
@@ -353,39 +384,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 print(key)
 
                 print("POWERUP")
-                print(state["powerups"])
-
-
-                #Check if bomberman is stuck 
-                if(bomberman == previous_bomberman_pos):
-                    print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
-                    count = count + 1 
-                
-                print("COUNT")
-                print(count)
-
-                if (count > 50):
-                    print("IS STUCK")
-                    if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
-                        print("IS STUCK EIXO Y")
-                        print("KEY7")
-                        key = "a"
-                    elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
-                        print("IS STUCK EIXO X")
-                        print("KEY8")
-                        key = "w"
-                    else:
-                        print("KEY9")
-                        key = "B"
-
-                    # elif sporting -> falta completar, perguntar ao diogo como funciona a key_randomly
-                    #     key = change_key_randomly() 
-                    count = 0 
-
-                if bomberman != previous_bomberman_pos:
-                    count = 0
-
-                previous_bomberman_pos = bomberman       
+                print(state["powerups"])      
 
                 #if bomberman is stucked in the corner, after he dies
                 if bomberman == bomberman_first_position:
