@@ -61,6 +61,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
         lives = 3
         bomberman_first_position = [0,0]
         is_stuck_flag = False
+        is_max_count_in_stuck = False
 
         while True:
             try:
@@ -91,7 +92,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 wall_spotted = False
                 balloom_spotted = False
                 oneal_within_range = False
-
+                is_max_count_in_stuck = False
                 
                 bomberman = state['bomberman']      
 
@@ -209,6 +210,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         print("KEY = B AND AFTER DEPLOY = TRUE")
                         print(key)
                         print(after_deploy)
+                        is_max_count_in_stuck = True
+                        count = 0
 
                     elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
                         print("IS STUCK EIXO X")
@@ -217,6 +220,8 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         print("KEY = B AND AFTER DEPLOY = TRUE")
                         print(key)
                         print(after_deploy)
+                        is_max_count_in_stuck = True
+                        count = 0
 
                     else :
                         key = "B"
@@ -224,6 +229,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         print("KEY = B AND AFTER DEPLOY = TRUE")
                         print(key)
                         print(after_deploy)
+                        is_max_count_in_stuck = True
                         count = 0
                     
                 if bomberman != previous_bomberman_pos:
@@ -292,7 +298,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 
                 
 
-                if (deployed_bomb_counter == 0):
+                if (deployed_bomb_counter == 0 and not is_max_count_in_stuck):
                     print("KEY1")
                     key = get_key(bomberman_string, next_block)
 
@@ -321,13 +327,13 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     if (current_state == 0):
                         print("DEPLOYING OVER ONEAL")
                         print(destiny)
-                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup, is_stuck_flag)
                     
                     elif (current_state == 1):
                        print("DEPLOYING OVER BALLOOM")
                        print(balloom_in_range)
                        if (balloom_in_range != None):
-                           values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, balloom_in_range, walls, key, after_deploy, powerup_pickedup)
+                           values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, balloom_in_range, walls, key, after_deploy, powerup_pickedup, is_stuck_flag)
                        else:
                            # balloom_in_range = False
                            # wall_spotted = True
@@ -336,7 +342,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     elif (current_state == 3):
                         print("DEPLOYING OVER DOLL")
                         print(destiny)
-                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
+                        values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup, is_stuck_flag)
                      
                     elif (current_state == 2):
                         print("STATE == 2")
@@ -348,7 +354,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         elif not balloom_in_radius(bomberman, enem_bal_coords, 3):
                             print("DEPLOYING OVER WALL")
                             print(destiny_wall)
-                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup)
+                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup, is_stuck_flag)
                             print("VALUE INSIDE")
                             print(values)
 
@@ -519,7 +525,7 @@ def away_from_wall(bomberman, wall, walls, last_key_not_B):
         print("last_key_not_B inside function")
         print(last_key_not_B)
         # it has to be the last_key_not_B, because the last_key will be always "B" in this situations
-        return opposite_key(last_key_not_B)
+        return last_key_not_B
 
     if (bomberman[0] < wall[0]):
         return "a"
@@ -630,7 +636,7 @@ def in_range(entity1, entity2, range_val):
     return False
 
 
-def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, pickedup):
+def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, pickedup, is_stuck_flag):
     after_deploy = True
     # let bomberman be in the same position for some frames, to be protected form bomb
     if(pickedup["Flames"]): 
@@ -644,8 +650,7 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, 
 
     # ACTIVATE DETONATOR
     # if bomberman has DETONATOR and he is still (meaning he is waiting for the bomb to explode, away from its range)
-    if (pickedup["Detonator"] and last_key == ""):
-        after_deploy = False
+    if (pickedup["Detonator"] and last_key == "" and not is_stuck_flag):
         return {"key":"A", "ad":after_deploy, "dbc":deployed_bomb_counter}
     
     # run from bomb
