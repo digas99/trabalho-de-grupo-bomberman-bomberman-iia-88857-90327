@@ -267,10 +267,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 
 
                 if (deployed_bomb_counter == 0):
+                    print("KEY1")
                     key = get_key(bomberman_string, next_block)
 
         
                 if (oneal_within_range or balloom_spotted or wall_spotted):
+                    print("KEY2")
                     key = "B"
                     has_deployed = True
                 
@@ -307,6 +309,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         print("STATE == 2")
                         if balloom_in_radius(bomberman, enem_bal_coords, 3) and not after_deploy:
                             print("NOT DEPLOYING, WAITING FOR BALLOOM TO GO AWAY")
+                            print("KEY3")
                             key = ""
 
                         elif not balloom_in_radius(bomberman, enem_bal_coords, 3):
@@ -319,6 +322,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     print("VALUE OUTSIDE")
                     print(values)
                     if len(values) != 0:
+                        print("KEY4")
                         key = values["key"]
                         deployed_bomb_counter = values["dbc"]
                         after_deploy = values["ad"]
@@ -333,6 +337,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                         last_key_not_B = key
 
                 if (corner_killing and len(array_keys) > 0):
+                    print("KEY5")
                     key = array_keys.pop(0)
 
 
@@ -340,6 +345,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     corner_killing = False
                     if (key_none_resolving_flag):
                         print("KEY NONE RESOLVING FLAG")
+                        print("KEY5")
                         key = ""
                         key_none_resolving_flag = False
 
@@ -362,11 +368,14 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     print("IS STUCK")
                     if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
                         print("IS STUCK EIXO Y")
+                        print("KEY7")
                         key = "a"
                     elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
                         print("IS STUCK EIXO X")
+                        print("KEY8")
                         key = "w"
                     else:
+                        print("KEY9")
                         key = "B"
 
                     # elif sporting -> falta completar, perguntar ao diogo como funciona a key_randomly
@@ -383,6 +392,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     print("STUCK IN CORNER")
                     if count > 10:
                         ("KEY=S")
+                        print("KEY9")
                         key = "s"
 
                 stepCount += 1
@@ -634,14 +644,17 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, 
             # check if bomberman is between walls
             fakeWall = is_between_walls(walls, bomberman)
             if (fakeWall == None):
+                print("INSIDE DEPLOY KEY1")
                 key = away_from_wall(bomberman, destiny, walls, last_key_not_B)
             else:
                 # faz um away_from_wall personalizado
                 print("Size of fakeWall array")
                 print(fakeWall)
                 if (len(fakeWall) == 1):
+                    print("INSIDE DEPLOY KEY2")
                     key = away_from_wall(bomberman, fakeWall[0], walls, last_key_not_B)
                 else:
+                    print("INSIDE DEPLOY KEY3")
                     key = away_from_wall(bomberman, fakeWall[random.randint(0,1)], walls, last_key_not_B)
         deployed_bomb_counter += 1
 
@@ -649,15 +662,20 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, 
         # if bomberman is between stones, one block after he deploys the bomb, then go one more block on the same direction
         if (is_between_stones(mapa, bomberman)):
             if (deployed_bomb_counter == 2):
+                print("INSIDE DEPLOY KEY4")
                 key = last_key
             elif (deployed_bomb_counter == 3):
                 if (is_wall(walls, destiny)):
+                    print("INSIDE DEPLOY KEY5")
                     key = last_key
                 else:
+                    print("INSIDE DEPLOY KEY6")
                     key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
             else:
+                print("INSIDE DEPLOY KEY7")
                 key = ""
         else:
+            print("INSIDE DEPLOY KEY8")
             key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
         deployed_bomb_counter += 1
     
