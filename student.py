@@ -64,8 +64,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
         while True:
             try:
-                print("")
-                print("BEGINNING OF LOOP")
 
                 state = json.loads(
                     await websocket.recv()
@@ -169,8 +167,6 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 if (not corner_killing):
 
-                    print("DESTINY RIGHT BEFORE ENTERING BLOCKS")
-                    print(destiny)
                     if (destiny == bomberman or destiny == None):
                         if (len(walls) != 0):
                             destiny = closest_entity(bomberman, walls)
@@ -198,12 +194,7 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     else:
                         t = SearchTree(p,'a*')
 
-                    result = t.search(90)
-
-                    print ("Bomberman: ")
-                    print (bomberman)
-                    print("Path: ")
-                    print(result)            
+                    result = t.search(90)            
 
                     # para quando fica sem path
                     if(result == None):
@@ -218,39 +209,26 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     next_block_arr = [int(s) for s in next_block_strings_arr]
                 
                 #Check if bomberman is stuck 
-                if(bomberman == previous_bomberman_pos):
-                    print("IMMA COUNT THAT SHIT BECAUSE IM STILL IN THE POS")    
+                if(bomberman == previous_bomberman_pos):   
                     count = count + 1 
 
                 if (count > 30):
-                    print("IS STUCK")
                     is_stuck_flag = True
                     if (mapa.is_stone([bomberman[0]+0, bomberman[1]+1]) and mapa.is_stone([bomberman[0]+0, bomberman[1]-1])):
-                        print("IS STUCK EIXO Y")
                         key = "B"
                         after_deploy = True
-                        print("KEY = B AND AFTER DEPLOY = TRUE")
-                        print(key)
-                        print(after_deploy)
                         is_max_count_in_stuck = True
                         count = 0
 
                     elif (mapa.is_stone([bomberman[0]+1, bomberman[1]+0]) and mapa.is_stone([bomberman[0]-1, bomberman[1]+0])):
-                        print("IS STUCK EIXO X")
                         key = "B"
                         after_deploy = True
-                        print("KEY = B AND AFTER DEPLOY = TRUE")
-                        print(key)
-                        print(after_deploy)
                         is_max_count_in_stuck = True
                         count = 0
 
                     else :
                         key = "B"
                         after_deploy = True
-                        print("KEY = B AND AFTER DEPLOY = TRUE")
-                        print(key)
-                        print(after_deploy)
                         is_max_count_in_stuck = True
                         count = 0
                     
@@ -285,19 +263,12 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
 
                 if (len(enem_oneal) > 0 and len(walls) == 0):
                     closest_oneal = closest_entity(bomberman, enem_oneal_coords)
-                    print("CLOSEST ONEAL")
-                    print(closest_oneal)
                     destiny = closest_oneal
                 
                 if (len(enem_doll) > 0 and len(walls) == 0):
                     closest_doll = closest_entity(bomberman, enem_doll_coords)
-                    print("CLOSEST DOLL")
-                    print(closest_doll)
                     destiny = closest_doll
                 
-
-                print("DESTINO ATUAL")
-                print(destiny)
                 
                 # CHECK IF BALLOOM IN WITHIN RANGE 
                 balloom_in_range = None
@@ -321,16 +292,10 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                 
 
                 if (deployed_bomb_counter == 0 and not is_max_count_in_stuck):
-                    print("KEY1")
-                    print("BOMBERMAN STRING")
-                    print(bomberman_string)
-                    print("NEXT BLOCK")
-                    print(next_block)
                     key = get_key(bomberman_string, next_block)
 
         
                 if (oneal_within_range or balloom_spotted or wall_spotted or doll_within_range):
-                    print("KEY2")
                     key = "B"
                     has_deployed = True
                 
@@ -350,17 +315,11 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                     is_max_count_in_stuck = False
 
                 if (key == "B" or after_deploy):
-                    print("KEY IS B")
-                    print("DEPLOY BOMB COUNTER: %d" % deployed_bomb_counter)
-                    print("AFTER DEPLOY: %s" % after_deploy)
+                
                     if (current_state == 0):
-                        print("DEPLOYING OVER ONEAL")
-                        print(destiny)
                         values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup, is_stuck_flag)
                     
                     elif (current_state == 1):
-                       print("DEPLOYING OVER BALLOOM")
-                       print(balloom_in_range)
                        if (balloom_in_range != None):
                            values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, balloom_in_range, walls, key, after_deploy, powerup_pickedup, is_stuck_flag)
                        else:
@@ -369,81 +328,46 @@ async def agent_loop(server_address="localhost:8000", agent_name="student"):
                            current_state = 2
 
                     elif (current_state == 3):
-                        print("DEPLOYING OVER DOLL")
-                        print(destiny)
                         values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup, is_stuck_flag)
                      
                     elif (current_state == 2):
-                        print("STATE == 2")
                         if balloom_in_radius(bomberman, enem_bal_coords, 3) and not after_deploy and not is_stuck_flag:
-                            print("NOT DEPLOYING, WAITING FOR BALLOOM TO GO AWAY")
-                            print("KEY3")
                             key = ""
 
                         elif not balloom_in_radius(bomberman, enem_bal_coords, 3):
-                            print("DEPLOYING OVER WALL")
-                            print(destiny_wall)
                             values = deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, bomberman, destiny, walls, key, after_deploy, powerup_pickedup, is_stuck_flag)
-                            print("VALUE INSIDE")
-                            print(values)
-
                     
-
-                            
-                    print("VALUE OUTSIDE")
-                    print(values)
                     if len(values) != 0:
-                        print("KEY4")
                         key = values["key"]
                         deployed_bomb_counter = values["dbc"]
                         after_deploy = values["ad"]
-
-                    print("LAST KEY")
-                    print(last_key)
-                    print("last_key_not_B")
-                    print(last_key_not_B)
 
                     last_key = key
                     if (key != "B" and key != ""):
                         last_key_not_B = key
 
                 if (corner_killing and len(array_keys) > 0):
-                    print("KEY5")
                     key = array_keys.pop(0)
 
 
                 if (len(enem_bal) == 0):
                     corner_killing = False
                     if (key_none_resolving_flag):
-                        print("KEY NONE RESOLVING FLAG")
-                        print("KEY5")
                         key = ""
                         key_none_resolving_flag = False
-
-                print("Key:")
-                print(key)
-
-                print("POWERUP")
-                print(state["powerups"])      
+     
 
                 #if bomberman is stucked in the corner, after he dies
                 if bomberman == bomberman_first_position:
                     countStuckInCorner = countStuckInCorner + 1
-                    print("STUCK IN CORNER")
+                    
                     if countStuckInCorner > 10:
-                        print("KEY=S")
                         key = "s"
                 
                 if bomberman != bomberman_first_position:
                     countStuckInCorner = 0
 
-                print("Count STUCK IN CORNER")
-                print(countStuckInCorner)
-
                 stepCount += 1
-
-                print("COUNT")
-                print(count)
 
                 await websocket.send(
                     json.dumps({"cmd": "key", "key": key})
@@ -496,10 +420,6 @@ def get_key(current_block, next_block):
         return "w"
 
 def away_from_wall(bomberman, wall, walls, last_key_not_B):
-    print("Bomberman in away_from_wall")
-    print(bomberman)
-    print("Wall in away_from_wall")
-    print(wall)
 
     pos_left_bomberman = get_pos_from_entity(bomberman,"left",1)
     pos_right_bomberman = get_pos_from_entity(bomberman,"right",1)
@@ -550,11 +470,11 @@ def away_from_wall(bomberman, wall, walls, last_key_not_B):
 
     # if there is a wall two blocks away from bomberman, then just go back
     if ((is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"left",2), "vertical") and is_wall(walls, pos_right_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"top",2), "horizontal") and is_wall(walls, pos_bottom_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"right",2), "vertical") and is_wall(walls, pos_left_bomberman)) or (is_wall_in_line_of_3(walls, get_pos_from_entity(bomberman,"bottom",2), "horizontal") and is_wall(walls, pos_top_bomberman))):
-        print("HAS WALL TWO POSITIONS AWAY FROM BOMBERMAN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print("last_key_not_B inside function")
-        print(last_key_not_B)
         # it has to be the last_key_not_B, because the last_key will be always "B" in this situations
         return last_key_not_B
+    
+    if ((is_wall_with_range(walls, get_pos_from_entity(bomberman,"left",2)) and is_wall(walls, pos_right_bomberman)) or (is_wall_with_range(walls, get_pos_from_entity(bomberman,"top",2)) and is_wall(walls, pos_bottom_bomberman)) or (is_wall_with_range(walls, get_pos_from_entity(bomberman,"right",2)) and is_wall(walls, pos_left_bomberman)) or (is_wall_with_range(walls, get_pos_from_entity(bomberman,"bottom",2)) and is_wall(walls, pos_top_bomberman))):
+        return opposite_key(last_key_not_B)
 
     if (bomberman[0] < wall[0]):
         return "a"
@@ -569,10 +489,6 @@ def away_from_wall(bomberman, wall, walls, last_key_not_B):
         return "s"
 
 def change_key_randomly(key, bomberman, destiny, walls, counter):
-    print("Bomberman in rand_key:")
-    print(bomberman)
-    print("Destiny in rand_key:")
-    print(destiny)
 
     # se o bomberman estiver no topo do mapa
     if (bomberman[1] == 1):
@@ -595,9 +511,7 @@ def change_key_randomly(key, bomberman, destiny, walls, counter):
         if (bomberman[0] == destiny[0] or counter == 4):
             return "a"
 
-    print("Oppos_key: ")
     oppos_key = opposite_key(key)
-    print(oppos_key)
     diff_keys = [k for k in "wasd" if (k != key and k != oppos_key)]
 
     future_coords = {}
@@ -615,17 +529,12 @@ def change_key_randomly(key, bomberman, destiny, walls, counter):
         if (d == "d"):
             future_coords['d'] = [bomberman[0]+1, bomberman[1]]
 
-    print("Future coords:")
-    print(future_coords)
     for c in future_coords:
         for w in walls:
             # a próxima posição é uma wall
             if (future_coords.get(c)[0] == w[0] and future_coords.get(c)[1] == w[1]):
-                print("returned after getting wall on future coord")
                 return opposite_key(c)
 
-    print("Diff Keys")
-    print(diff_keys)
     return diff_keys[random.randint(0,1)]
 
 def is_between_stones(mapa, coords):
@@ -678,25 +587,23 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, 
             deployed_bomb_counter = 0
     
     # run from bomb
-    print("DEPLOYED BOMB COUNTER INSIDE DEPLOY BOMB")
-    print(deployed_bomb_counter)
+    
     if (last_key == "B" or deployed_bomb_counter == 1):
-        print("HEREEEE")
+        
         if (destiny != None):
             # check if bomberman is between walls
             fakeWall = is_between_walls(walls, bomberman)
             if (fakeWall == None):
-                print("INSIDE DEPLOY KEY1")
+                
                 key = away_from_wall(bomberman, destiny, walls, last_key_not_B)
             else:
                 # faz um away_from_wall personalizado
-                print("Size of fakeWall array")
-                print(fakeWall)
+               
                 if (len(fakeWall) == 1):
-                    print("INSIDE DEPLOY KEY2")
+                    
                     key = away_from_wall(bomberman, fakeWall[0], walls, last_key_not_B)
                 else:
-                    print("INSIDE DEPLOY KEY3")
+                    
                     key = away_from_wall(bomberman, fakeWall[random.randint(0,1)], walls, last_key_not_B)
         deployed_bomb_counter += 1
 
@@ -704,20 +611,20 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, 
         # if bomberman is between stones, one block after he deploys the bomb, then go one more block on the same direction
         if (is_between_stones(mapa, bomberman)):
             if (deployed_bomb_counter == 2):
-                print("INSIDE DEPLOY KEY4")
+                
                 key = last_key
             elif (deployed_bomb_counter == 3):
                 if (is_wall(walls, destiny)):
-                    print("INSIDE DEPLOY KEY5")
+                   
                     key = last_key
                 else:
-                    print("INSIDE DEPLOY KEY6")
+                    
                     key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
             else:
-                print("INSIDE DEPLOY KEY7")
+                
                 key = ""
         else:
-            print("INSIDE DEPLOY KEY8")
+            
             key = change_key_randomly(last_key, bomberman, destiny, walls, deployed_bomb_counter)
         deployed_bomb_counter += 1
     
@@ -728,10 +635,6 @@ def deploy_bomb(powerup, deployed_bomb_counter, last_key, last_key_not_B, mapa, 
             deployed_bomb_counter = 0
             key = "A"
 
-    print("")
-    print("RETURN OF DEPLOY BOMB")
-    print("DEPLOY BOMB COUNTER: %d" % deployed_bomb_counter)
-    print("AFTER DEPLOY: %s" % after_deploy)
     return {"key":key, "ad":after_deploy, "dbc":deployed_bomb_counter}
 
 def entityCoords(arr_entities, name):
@@ -796,10 +699,6 @@ def center_of_path(path, rounding):
     if (rounding == "ceil"):
         return path[math.ceil(len(path)/2)]
     elif (rounding == "floor"):
-        print("Inside center of path")
-        print(path)
-        print(len(path))
-        print(path[math.floor(len(path)/2)])
         return path[math.floor(len(path)/2)]
     else:
         return None
@@ -837,6 +736,11 @@ def is_wall_in_line_of_3(walls, coords, direction):
         if(is_wall(walls,get_pos_from_entity(coords, "bottom", 1))):
             return True
     
+    return False
+
+def is_wall_with_range(walls, coords):
+    if (is_wall(walls, coords)):
+        return True
     return False
     
 #check if bomberman and enemie are on the same axis
